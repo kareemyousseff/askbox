@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ask box</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 40rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      textarea,
+      button,
+      pre {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      textarea {
+        min-height: 6rem;
+      }
+      pre {
+        white-space: pre-wrap;
+        background: #f4f4f4;
+        padding: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Ask box</h1>
+    <p>Type something. Your server sends it to Gemini and prints the reply.</p>
+    <form id="form">
+      <textarea id="message" name="message" placeholder="Say hello"></textarea>
+      <button type="submit">Ask</button>
+    </form>
+    <pre id="reply">No reply yet.</pre>
+    <script>
+      const form = document.getElementById("form");
+      const message = document.getElementById("message");
+      const reply = document.getElementById("reply");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        reply.textContent = "Asking...";
+        const response = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: message.value }),
+        });
+        const data = await response.json();
+        reply.textContent = data.reply || data.error || "No reply";
+      });
+    </script>
+  </body>
+</html>

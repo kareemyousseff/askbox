@@ -1,0 +1,17 @@
+{
+  "name": "ask-box",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file=.env server.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@google/genai": "^1.30.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  }
+}
