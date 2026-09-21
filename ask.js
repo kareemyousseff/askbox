@@ -7,15 +7,22 @@ export async function askGemini(message, generateContent) {
     throw new Error("Message is required");
   }
 
-  const response = await generateContent(text);
-  const call = response.functionCalls?.[0];
+   let response = await generateContent(text);
+  let contents = [ { role: "user", parts: [{ text: text }] } ]
+  let calls = response.functionCalls ?? [];
 
-  if (call) {
+  while (calls.length > 0) {
+     let call = calls.shift();
+    let hits;
     if (call.name === "searchNotes") {
-      const hits = searchNotes(call.args?.query);
-      const second = await generateContent([
-        { role: "user", parts: [{ text: text }] },
-        response.candidates[0].content,
+      hits = searchNotes(call.args?.query);
+    }
+      if (call.name === "addNote") {
+        hits = addNote(call.args?.title, call.args?.content);
+      }
+      contents.push(response.candidates[0].content);
+      response = await generateContent([
+       ...contents,
         {
           role: "user",
           parts: [
@@ -28,40 +35,9 @@ export async function askGemini(message, generateContent) {
             },
           ],
         },
-      ]);
-      const reply = String(second?.text ?? "").trim();
-      if (!reply) {
-        throw new Error("Gemini returned no text");
-      }
-      return reply;
+      ])
+      calls = response.functionCalls ?? [];
     }
-
-    if (call.name === "addNote") {
-      const result = addNote(call.args?.title, call.args?.content);
-      const second = await generateContent([
-        { role: "user", parts: [{ text: text }] },
-        response.candidates[0].content,
-        {
-          role: "user",
-          parts: [
-            {
-              functionResponse: {
-                name: call.name ?? "addNote",
-                id: call.id,
-                response: { success: result },
-              },
-            },
-          ],
-        },
-      ]);
-      const reply = String(second?.text ?? "").trim();
-      if (!reply) {
-        throw new Error("Gemini returned no text");
-      }
-      return reply;
-    }
-  }
-
   const reply = String(response?.text ?? "").trim();
   if (!reply) {
     throw new Error("Gemini returned no text");
