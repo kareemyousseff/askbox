@@ -1,0 +1,23 @@
+h1,
+p,
+form,
+pre {
+  margin-bottom: 1rem;
+}
+
+textarea,
+button,
+pre {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+textarea {
+  min-height: 6rem;
+}
+
+pre {
+  white-space: pre-wrap;
+  background: #f4f4f4;
+  padding: 1rem;
+}

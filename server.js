@@ -11,8 +11,17 @@ if (!apiKey) {
 const ai = new GoogleGenAI({ apiKey });
 const app = express();
 
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 app.use(express.json());
-app.use(express.static("public"));
 
 app.post("/ask", async (req, res) => {
   try {
@@ -62,5 +71,5 @@ app.post("/ask", async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log("Open http://localhost:3000");
+  console.log("API on http://localhost:3000  — open the React app on http://localhost:5173");
 });

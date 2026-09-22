@@ -19,6 +19,18 @@
     {
       "title": "Where I live",
       "content": "I live in cairo"
+    },
+    {
+      "title": "Favorite food",
+      "content": "I like cookies"
+    },
+    {
+      "title": "Food Likes",
+      "content": "i like cookies"
+    },
+    {
+      "title": "Food Preferences",
+      "content": "I like pasta"
     }
   ]
 }
