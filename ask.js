@@ -2,13 +2,14 @@ import { searchNotes } from "./agent-functions.js";
 import { addNote } from "./agent-functions.js";
 
 export async function askGemini(message, generateContent) {
-  const text = String(message ?? "").trim();
-  if (!text) {
+  const messages = message.map(turn => turn.content);
+  console.log(messages);
+  if (!messages) {
     throw new Error("Message is required");
   }
 
-   let response = await generateContent(text);
-  let contents = [ { role: "user", parts: [{ text: text }] } ]
+  let contents =message.map(turn => ({ role: turn.role, parts: [{ text: turn.content }] }));
+  let response = await generateContent(contents);
   let calls = response.functionCalls ?? [];
 
   while (calls.length > 0) {

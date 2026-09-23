@@ -5,6 +5,10 @@ function App() {
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState("No reply yet.");
   const [waiting, setWaiting] = useState(false);
+  const [turns, setTurns] = useState([]);
+  const nextTurns = [...turns, {role: "user", content: message}];
+
+
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -14,14 +18,16 @@ function App() {
       const response = await fetch("http://localhost:3000/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message: nextTurns }),
       });
       const data = await response.json();
       setReply(data.reply || data.error || "No reply");
+      setTurns([...nextTurns, {role: "model", content: data.reply}]);
     } catch {
       setReply("Could not reach the server.");
     } finally {
       setWaiting(false);
+      setMessage("");
     }
   }
 
