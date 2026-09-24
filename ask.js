@@ -17,6 +17,7 @@ export async function askGemini(message, generateContent) {
     let hits;
     if (call.name === "searchNotes") {
       hits = searchNotes(call.args?.query);
+      console.log(call.args?.query)
     }
       if (call.name === "addNote") {
         hits = addNote(call.args?.title, call.args?.content);

@@ -6,6 +6,7 @@ export function searchNotes(query) {
   if (!needle) {
     return [];
   }
+  console.log(query)
 
   return notes.notes.filter((note) =>
     `${note.title} ${note.content}`.toLowerCase().includes(needle),
