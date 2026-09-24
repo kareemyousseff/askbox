@@ -31,7 +31,7 @@ app.post("/ask", async (req, res) => {
         contents,
         config: {
           systemInstruction:
-            "You may call searchNotes and addNote. Answer only from what searchNotes returns. If it returns nothing, or you did not call it, reply exactly: I don't know. Do not use anything else you know.",
+            "You may call searchNotes and addNote. Answer only from notes that searchNotes returns. If a search returns nothing, try one more search with a different word, like the person's name. Only if every search returns nothing, reply exactly: I don't know. Do not use anything else you know.",
           tools: [
             {
               functionDeclarations: [
