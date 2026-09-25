@@ -1,10 +1,10 @@
 import { searchNotes } from "./agent-functions.js";
 import { addNote } from "./agent-functions.js";
 
-export async function askGemini(message, generateContent) {
-  const messages = message.map(turn => turn.content);
+export async function askGemini(message, generateContent, store) {
+  const messages = message.map((turn) => turn.content);
   console.log(messages);
-  if (!messages) {
+  if (!messages.some((line) => String(line ?? "").trim())) {
     throw new Error("Message is required");
   }
 
@@ -20,11 +20,11 @@ export async function askGemini(message, generateContent) {
      let call = calls.shift();
     let hits;
     if (call.name === "searchNotes") {
-      hits = searchNotes(call.args?.query);
+      hits = searchNotes(call.args?.query, store);
       console.log(call.args?.query)
     }
       if (call.name === "addNote") {
-        hits = addNote(call.args?.title, call.args?.content);
+        hits = addNote(call.args?.title, call.args?.content, store);
       }
       parts.push({
        
