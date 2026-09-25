@@ -12,6 +12,10 @@ export async function askGemini(message, generateContent) {
   let response = await generateContent(contents);
   let calls = response.functionCalls ?? [];
 
+  while(calls.length > 0) {
+    const parts = [];
+    contents.push(response.candidates[0].content);
+
   while (calls.length > 0) {
      let call = calls.shift();
     let hits;
@@ -22,24 +26,20 @@ export async function askGemini(message, generateContent) {
       if (call.name === "addNote") {
         hits = addNote(call.args?.title, call.args?.content);
       }
-      contents.push(response.candidates[0].content);
-      response = await generateContent([
-       ...contents,
-        {
-          role: "user",
-          parts: [
-            {
-              functionResponse: {
-                name: call.name ?? "searchNotes",
-                id: call.id,
-                response: { hits },
-              },
-            },
-          ],
-        },
-      ])
+      parts.push({
+       
+            functionResponse: {
+              name: call.name,
+              id: call.id,
+            response: { hits },
+          },
+        });
+      contents.push({ role: "user", parts });
+      console.log(JSON.stringify(contents, null, 2));
+      response = await generateContent(contents);
       calls = response.functionCalls ?? [];
     }
+  }
   const reply = String(response?.text ?? "").trim();
   if (!reply) {
     throw new Error("Gemini returned no text");
