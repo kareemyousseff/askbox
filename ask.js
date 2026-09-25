@@ -34,11 +34,12 @@ export async function askGemini(message, generateContent) {
             response: { hits },
           },
         });
-      contents.push({ role: "user", parts });
-      console.log(JSON.stringify(contents, null, 2));
-      response = await generateContent(contents);
-      calls = response.functionCalls ?? [];
+    
     }
+    contents.push({ role: "user", parts });
+    console.log(JSON.stringify(contents, null, 2));
+    response = await generateContent(contents);
+    calls = response.functionCalls ?? [];
   }
   const reply = String(response?.text ?? "").trim();
   if (!reply) {
