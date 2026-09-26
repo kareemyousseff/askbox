@@ -6,10 +6,7 @@ function App() {
   const [reply, setReply] = useState("No reply yet.");
   const [waiting, setWaiting] = useState(false);
   const [turns, setTurns] = useState([]);
-  const nextTurns = [...turns, {role: "user", content: message}];
-  const [searches, setSearches] = useState([]);
-
-
+  const nextTurns = [...turns, { role: "user", content: message }];
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -24,9 +21,11 @@ function App() {
       const data = await response.json();
       setReply(data.reply || data.error || "No reply");
       if (data.reply) {
-        setTurns([...nextTurns, {role: "model", content: data.reply}]);
+        setTurns([
+          ...nextTurns,
+          { role: "model", content: data.reply, searches: data.searches || [] },
+        ]);
         setMessage("");
-        setSearches(data.searches);
       }
     } catch {
       setReply("Could not reach the server.");
@@ -38,7 +37,9 @@ function App() {
   return (
     <>
       <h1>Ask box</h1>
-      <p>Type something. Your server sends it to Gemini and prints the reply.</p>
+      <p>
+        Type something. Your server sends it to Gemini and prints the reply.
+      </p>
       <form onSubmit={onSubmit}>
         <textarea
           value={message}
@@ -50,7 +51,15 @@ function App() {
         </button>
       </form>
       <pre>{reply}</pre>
-      <pre>{JSON.stringify(searches, null, 2)}</pre>
+      {turns.map((turn, index) => (
+        <div key={index}>
+          <p>
+            {turn.role === "user" ? "You" : "Gemini"}: {turn.content}
+          </p>
+          {turn.searches ? <p>Searches: {turn.searches.join(", ")}</p> : null}
+        </div>
+      ))}
+      <pre>{JSON.stringify(turns, null, 2)}</pre>
     </>
   );
 }

@@ -31,7 +31,7 @@ app.post("/ask", async (req, res) => {
         contents,
         config: {
           systemInstruction:
-            "If they ask for a fact, answer only from searchNotes. An empty search means try another word. If every search is empty, reply exactly I don't know.If they just say hello, reply with a short greeting. Do not search.If addNote returns success, say the note was saved. Do not answer I don't know for that.",
+            "If they ask for a fact, answer only from searchNotes. An empty search means try another word,try a word that might actually be written in the note, such as the person's name, and do not only swap in another synonym of the question. If every search is empty, reply exactly I don't know.If they just say hello, reply with a short greeting. Do not search.If addNote returns success, say the note was saved. Do not answer I don't know for that.",
           tools: [
             {
               functionDeclarations: [
