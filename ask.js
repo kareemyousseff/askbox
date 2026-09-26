@@ -11,8 +11,13 @@ export async function askGemini(message, generateContent, store) {
   let contents =message.map(turn => ({ role: turn.role, parts: [{ text: turn.content }] }));
   let response = await generateContent(contents);
   let calls = response.functionCalls ?? [];
+  let count = 0;
 
   while(calls.length > 0) {
+    count++;
+    if (count > 5) {
+      throw new Error("Too many calls");
+    }
     const parts = [];
     contents.push(response.candidates[0].content);
 

@@ -160,4 +160,28 @@ describe("askGemini", () => {
     expect(step).toBe(2);
     expect(store.notes.some((note) => note.title === "test-both")).toBe(true);
   });
+
+  it("stops after five tool laps", async () => {
+    let step = 0;
+    const modelAsk = {
+      role: "model",
+      parts: [{ functionCall: { name: "searchNotes", args: { query: "kareem" } } }],
+    };
+
+    await expect(
+      askGemini(
+        [{ role: "user", content: "how old is kareem" }],
+        async () => {
+          step += 1;
+          return {
+            functionCalls: [{ name: "searchNotes", args: { query: "kareem" } }],
+            candidates: [{ content: modelAsk }],
+          };
+        },
+        copyNotes(),
+      ),
+    ).rejects.toThrow("Too many calls");
+
+    expect(step).toBe(6);
+  });
 });
