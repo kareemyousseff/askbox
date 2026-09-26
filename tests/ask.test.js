@@ -14,7 +14,7 @@ describe("askGemini", () => {
       return { text: "hi there" };
     });
 
-    expect(reply).toBe("hi there");
+    expect(reply.reply).toBe("hi there");
   });
 
   it("rejects a blank message", async () => {
@@ -53,7 +53,7 @@ describe("askGemini", () => {
       copyNotes(),
     );
 
-    expect(reply).toBe("Kareem is a software engineer");
+    expect(reply.reply).toBe("Kareem is a software engineer");
   });
 
   it("runs addNote then searchNotes in the same ask", async () => {
@@ -116,7 +116,7 @@ describe("askGemini", () => {
       store,
     );
 
-    expect(reply).toBe("Kareem lives in Cairo");
+    expect(reply.reply).toBe("Kareem lives in Cairo");
     expect(step).toBe(3);
     expect(store.notes.some((note) => note.title === "test-loop")).toBe(true);
   });
@@ -157,7 +157,7 @@ describe("askGemini", () => {
       store,
     );
 
-    expect(reply).toBe("test-both is cairo");
+    expect(reply.reply).toBe("test-both is cairo");
     expect(step).toBe(2);
     expect(store.notes.some((note) => note.title === "test-both")).toBe(true);
   });

@@ -7,6 +7,7 @@ function App() {
   const [waiting, setWaiting] = useState(false);
   const [turns, setTurns] = useState([]);
   const nextTurns = [...turns, {role: "user", content: message}];
+  const [searches, setSearches] = useState([]);
 
 
 
@@ -25,6 +26,7 @@ function App() {
       if (data.reply) {
         setTurns([...nextTurns, {role: "model", content: data.reply}]);
         setMessage("");
+        setSearches(data.searches);
       }
     } catch {
       setReply("Could not reach the server.");
@@ -48,6 +50,7 @@ function App() {
         </button>
       </form>
       <pre>{reply}</pre>
+      <pre>{JSON.stringify(searches, null, 2)}</pre>
     </>
   );
 }

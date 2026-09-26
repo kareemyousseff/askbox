@@ -25,7 +25,7 @@ app.use(express.json());
 
 app.post("/ask", async (req, res) => {
   try {
-    const reply = await askGemini(req.body?.message, async (contents) => {
+    const { reply, searches } = await askGemini(req.body?.message, async (contents) => {
       return ai.models.generateContent({
         model: "gemini-3.5-flash-lite",
         contents,
@@ -64,7 +64,7 @@ app.post("/ask", async (req, res) => {
         },
       });
     });
-    res.json({ reply });
+    res.json({ reply, searches });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

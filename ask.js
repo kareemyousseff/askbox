@@ -12,6 +12,7 @@ export async function askGemini(message, generateContent, store) {
   let response = await generateContent(contents);
   let calls = response.functionCalls ?? [];
   let count = 0;
+  let searches =[];
 
   while(calls.length > 0) {
     count++;
@@ -27,6 +28,7 @@ export async function askGemini(message, generateContent, store) {
     if (call.name === "searchNotes") {
       hits = searchNotes(call.args?.query, store);
       console.log(call.args?.query)
+      searches.push(call.args?.query);
     }
       if (call.name === "addNote") {
         hits = addNote(call.args?.title, call.args?.content, store);
@@ -44,6 +46,7 @@ export async function askGemini(message, generateContent, store) {
     contents.push({ role: "user", parts });
     console.log(JSON.stringify(contents, null, 2));
     response = await generateContent(contents);
+    console.log(JSON.stringify(response, null, 2));
     calls = response.functionCalls ?? [];
   }
   const reply = String(response?.text ?? "").trim();
@@ -51,5 +54,5 @@ export async function askGemini(message, generateContent, store) {
     throw new Error("Gemini returned no text");
   }
 
-  return reply;
-}
+  return { reply, searches };
+};
