@@ -22,12 +22,14 @@ function App() {
       });
       const data = await response.json();
       setReply(data.reply || data.error || "No reply");
-      setTurns([...nextTurns, {role: "model", content: data.reply}]);
+      if (data.reply) {
+        setTurns([...nextTurns, {role: "model", content: data.reply}]);
+        setMessage("");
+      }
     } catch {
       setReply("Could not reach the server.");
     } finally {
       setWaiting(false);
-      setMessage("");
     }
   }
 

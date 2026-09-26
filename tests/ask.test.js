@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import notes from "../notes.json" with { type: "json" };
 import { askGemini } from "../ask.js";
+import { searchNotes } from "../agent-functions.js";
 
 function copyNotes() {
   return { notes: structuredClone(notes.notes) };
@@ -183,5 +184,15 @@ describe("askGemini", () => {
     ).rejects.toThrow("Too many calls");
 
     expect(step).toBe(6);
+  });
+});
+
+describe("searchNotes", () => {
+  it("matches a note when any word in the query appears", () => {
+    const store = copyNotes();
+
+    const hits = searchNotes("Kareem work job occupation", store);
+    expect(hits.some((note) => note.content.includes("software engineer"))).toBe(true);
+    expect(searchNotes("zzz", store)).toEqual([]);
   });
 });
