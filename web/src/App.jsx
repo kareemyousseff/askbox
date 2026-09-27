@@ -5,7 +5,10 @@ function App() {
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState("No reply yet.");
   const [waiting, setWaiting] = useState(false);
-  const [turns, setTurns] = useState([]);
+  const [turns, setTurns] = useState(()=>{
+    const storedTurns = localStorage.getItem("turns");
+    return storedTurns ? JSON.parse(storedTurns) : [];
+  });
   const nextTurns = [...turns, { role: "user", content: message }];
 
   async function onSubmit(event) {
@@ -21,10 +24,12 @@ function App() {
       const data = await response.json();
       setReply(data.reply || data.error || "No reply");
       if (data.reply) {
-        setTurns([
+        const updatedTurns = [
           ...nextTurns,
           { role: "model", content: data.reply, searches: data.searches || [] },
-        ]);
+        ];
+        setTurns(updatedTurns);
+        localStorage.setItem("turns", JSON.stringify(updatedTurns));
         setMessage("");
       }
     } catch {
