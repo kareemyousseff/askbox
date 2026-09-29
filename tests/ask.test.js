@@ -45,7 +45,7 @@ describe("askGemini", () => {
         expect(contents).toHaveLength(3);
         expect(contents[0]).toEqual({ role: "user", parts: [{ text: "who is kareem" }] });
         expect(contents[1]).toBe(modelAsk);
-        expect(contents[2].parts[0].functionResponse.response.hits[0].content).toMatch(
+        expect(contents[2].parts[0].functionResponse.response.hits.results[0].content).toMatch(
           /software engineer/,
         );
         return { text: "Kareem is a software engineer" };
@@ -100,6 +100,7 @@ describe("askGemini", () => {
           expect(contents[2].parts[0].functionResponse.name).toBe("addNote");
           expect(contents[2].parts[0].functionResponse.response.hits).toEqual({
             success: true,
+            message: "Note added successfully",
           });
           return {
             functionCalls: [{ name: "searchNotes", args: { query: "test-loop" } }],
@@ -110,7 +111,7 @@ describe("askGemini", () => {
         expect(step).toBe(3);
         const paper = contents[contents.length - 1].parts[0].functionResponse;
         expect(paper.name).toBe("searchNotes");
-        expect(paper.response.hits[0].title).toBe("test-loop");
+        expect(paper.response.hits.results[0].title).toBe("test-loop");
         return { text: "Kareem lives in Cairo" };
       },
       store,
@@ -151,7 +152,7 @@ describe("askGemini", () => {
         expect(paper.parts).toHaveLength(2);
         expect(paper.parts[0].functionResponse.name).toBe("addNote");
         expect(paper.parts[1].functionResponse.name).toBe("searchNotes");
-        expect(paper.parts[1].functionResponse.response.hits[0].title).toBe("test-both");
+        expect(paper.parts[1].functionResponse.response.hits.results[0].title).toBe("test-both");
         return { text: "test-both is cairo" };
       },
       store,
@@ -192,7 +193,10 @@ describe("searchNotes", () => {
     const store = copyNotes();
 
     const hits = searchNotes("Kareem work job occupation", store);
-    expect(hits.some((note) => note.content.includes("software engineer"))).toBe(true);
-    expect(searchNotes("zzz", store)).toEqual([]);
+    expect(hits.success).toBe(true);
+    expect(hits.results.some((note) => note.content.includes("software engineer"))).toBe(true);
+    const miss = searchNotes("zzz", store);
+    expect(miss.success).toBe(false);
+    expect(miss.message).toMatch(/No note/);
   });
 });

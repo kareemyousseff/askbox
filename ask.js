@@ -9,7 +9,8 @@ export async function askGemini(message, generateContent, store) {
   }
 
   let contents =message.map(turn => ({ role: turn.role, parts: [{ text: turn.content }] }));
-  let response = await generateContent(contents);
+  let recents = contents.slice(-5);
+  let response = await generateContent(recents);
   let calls = response.functionCalls ?? [];
   let count = 0;
   let searches =[];
@@ -20,7 +21,7 @@ export async function askGemini(message, generateContent, store) {
       throw new Error("Too many calls");
     }
     const parts = [];
-    contents.push(response.candidates[0].content);
+    recents.push(response.candidates[0].content);
 
   while (calls.length > 0) {
      let call = calls.shift();
@@ -43,9 +44,9 @@ export async function askGemini(message, generateContent, store) {
         });
     
     }
-    contents.push({ role: "user", parts });
-    console.log(JSON.stringify(contents, null, 2));
-    response = await generateContent(contents);
+    recents.push({ role: "user", parts });
+    console.log(JSON.stringify(recents, null, 2));
+    response = await generateContent(recents);
     console.log(JSON.stringify(response, null, 2));
     calls = response.functionCalls ?? [];
   }

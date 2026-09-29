@@ -8,18 +8,35 @@ export function searchNotes(query, store = notes) {
     .split(/\s+/)
     .filter((word) => word.length >= 3);
   if (words.length === 0) {
-    return [];
+    return { success: false, message: "No words found" };
   }
 
-  return store.notes.filter((note) => {
+  const results = store.notes.filter((note) => {
     const text = `${note.title} ${note.content}`.toLowerCase();
     return words.some((word) => text.includes(word));
   });
+  if (results.length === 0) {
+    return {
+      success: false,
+      message:
+        "No note had those words. Try a different word. If you already tried, say I don't know.",
+      results,
+    };
+  }
+  return {
+    success: true,
+    message: "Found matching notes. Answer only from these.",
+    results,
+  };
 }
 export function addNote(title, content, store = notes) {
-  store.notes.push({ title, content });
+  if (!title || !content) {
+    return { success: false, message: "Title and content are required" };
+  }
+  const newNote = { title, content };
+  store.notes.push(newNote);
   if (store === notes) {
     fs.writeFileSync("notes.json", JSON.stringify(notes, null, 2));
   }
-  return { success: true };
+  return { success: true, message: "Note added successfully" };
 }
