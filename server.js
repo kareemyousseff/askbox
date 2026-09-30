@@ -31,13 +31,13 @@ app.post("/ask", async (req, res) => {
         contents,
         config: {
           systemInstruction:
-            "If they ask for a fact, answer only from searchNotes. An empty search means try another word,try a word that might actually be written in the note, such as the person's name, and do not only swap in another synonym of the question. If every search is empty, reply exactly I don't know.If they just say hello, reply with a short greeting. Do not search.If addNote returns success, say the note was saved. Do not answer I don't know for that.",
+            "Answer a fact only from searchNotes results. If searchNotes returns success false, reply exactly I don't know. If they just say hello, reply with a short greeting. Do not search. If addNote returns success, say the note was saved. Do not answer I don't know for that.",
           tools: [
             {
               functionDeclarations: [
                 {
                   name: "searchNotes",
-                  description: "Search Kareem's notes by meaning. Returns the closest note or an empty list.",
+                  description: "Look up a fact in Kareem's notes by meaning. Call this when the user asks for a fact. Do not call it for a greeting like hello. The result is { success, message, results }. results holds the closest note. If success is false, reply exactly I don't know.",
                   parametersJsonSchema: {
                     type: "object",
                     properties: {
