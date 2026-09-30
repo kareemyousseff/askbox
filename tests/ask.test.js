@@ -223,4 +223,27 @@ describe("searchNotes", () => {
     expect(miss.success).toBe(false);
     expect(miss.message).toMatch(/No note/);
   });
+
+  it("returns every note above the cutoff, best first", async () => {
+    const store = {
+      notes: [
+        { title: "A", content: "cookies" },
+        { title: "B", content: "pasta" },
+        { title: "C", content: "cairo" },
+      ],
+    };
+    async function embed(texts) {
+      return texts.map((text) => {
+        const line = text.toLowerCase();
+        if (line.includes("food")) return [1, 0, 0];
+        if (line.includes("cookies")) return [0.9, 0, 0];
+        if (line.includes("pasta")) return [0.8, 0, 0];
+        return [0, 1, 0];
+      });
+    }
+
+    const hits = await searchNotes("what food do I like", store, embed);
+    expect(hits.success).toBe(true);
+    expect(hits.results.map((note) => note.content)).toEqual(["cookies", "pasta"]);
+  });
 });

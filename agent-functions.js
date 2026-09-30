@@ -40,10 +40,11 @@ export async function searchNotes(query, store = notes, embed) {
       results: [],
     };
   }
+  const matched = scored.filter((row) => row.score >= MIN_SCORE);
   return {
     success: true,
     message: "Found matching notes. Answer only from these.",
-    results: [best.note],
+    results: matched.map((row) => row.note),
   };
 }
 export function addNote(title, content, store = notes) {
