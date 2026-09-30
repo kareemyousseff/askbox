@@ -31,13 +31,13 @@ app.post("/ask", async (req, res) => {
         contents,
         config: {
           systemInstruction:
-            "Answer a fact only from searchNotes results. If searchNotes returns success false, reply exactly I don't know. If they just say hello, reply with a short greeting. Do not search. If addNote returns success, say the note was saved. Do not answer I don't know for that.",
+            "Answer a fact only from searchNotes results. If results has more than one note, the answer must include every note. If searchNotes returns success false, reply exactly I don't know. If they just say hello, reply with a short greeting. Do not search. If addNote returns success true, say the note was saved. Do not answer I don't know for that.",
           tools: [
             {
               functionDeclarations: [
                 {
                   name: "searchNotes",
-                  description: "Look up a fact in Kareem's notes by meaning. Call this when the user asks for a fact. Do not call it for a greeting like hello. The result is { success, message, results }. results holds the closest note. If success is false, reply exactly I don't know.",
+                  description: "Look up a fact in Kareem's notes by meaning. Call this when the user asks for a fact. Do not call it for a greeting like hello. The result is { success, message, results }. results holds every note that was close enough, best first. The answer must include every note in results. If success is false, reply exactly I don't know.",
                   parametersJsonSchema: {
                     type: "object",
                     properties: {
@@ -48,7 +48,7 @@ app.post("/ask", async (req, res) => {
                 },
                 {
                   name: "addNote",
-                  description: "Add a new note to Kareem's notes.",
+                  description: "Save a new note when the user asks to remember or add something. The result is { success, message }. If success is true, tell the user the note was saved. If success is false, tell the user the message.",
                   parametersJsonSchema: {
                     type: "object",
                     properties: {

@@ -43,7 +43,7 @@ export async function searchNotes(query, store = notes, embed) {
   const matched = scored.filter((row) => row.score >= MIN_SCORE);
   return {
     success: true,
-    message: "Found matching notes. Answer only from these.",
+    message: "Found matching notes. Use every note in results. Do not answer from only the first one.",
     results: matched.map((row) => row.note),
   };
 }
