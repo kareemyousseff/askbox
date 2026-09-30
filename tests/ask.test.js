@@ -7,6 +7,17 @@ function copyNotes() {
   return { notes: structuredClone(notes.notes) };
 }
 
+function fakeEmbed(texts) {
+  return texts.map((text) => {
+    const line = text.toLowerCase();
+    return [
+      line.includes("kareem") || line.includes("software") ? 1 : 0,
+      line.includes("test-loop") ? 1 : 0,
+      line.includes("test-both") ? 1 : 0,
+    ];
+  });
+}
+
 describe("askGemini", () => {
   it("sends the message to generateContent and returns the text", async () => {
     const reply = await askGemini([{ role: "user", content: "hello" }], async (contents) => {
@@ -51,6 +62,7 @@ describe("askGemini", () => {
         return { text: "Kareem is a software engineer" };
       },
       copyNotes(),
+      fakeEmbed,
     );
 
     expect(reply.reply).toBe("Kareem is a software engineer");
@@ -115,6 +127,7 @@ describe("askGemini", () => {
         return { text: "Kareem lives in Cairo" };
       },
       store,
+      fakeEmbed,
     );
 
     expect(reply.reply).toBe("Kareem lives in Cairo");
@@ -156,6 +169,7 @@ describe("askGemini", () => {
         return { text: "test-both is cairo" };
       },
       store,
+      fakeEmbed,
     );
 
     expect(reply.reply).toBe("test-both is cairo");
@@ -181,6 +195,7 @@ describe("askGemini", () => {
           };
         },
         copyNotes(),
+        fakeEmbed,
       ),
     ).rejects.toThrow("Too many calls");
 
@@ -189,13 +204,22 @@ describe("askGemini", () => {
 });
 
 describe("searchNotes", () => {
-  it("matches a note when any word in the query appears", () => {
+  it("returns the note with the highest score, and rejects a low score", async () => {
     const store = copyNotes();
+    async function embed(texts) {
+      return texts.map((text) => {
+        const line = text.toLowerCase();
+        if (line.includes("star sign")) return [1, 0, 0];
+        if (line.includes("taurus")) return [0.9, 0.1, 0];
+        if (line.includes("zzz")) return [0, 0, 1];
+        return [0, 1, 0];
+      });
+    }
 
-    const hits = searchNotes("Kareem work job occupation", store);
+    const hits = await searchNotes("what's my star sign", store, embed);
     expect(hits.success).toBe(true);
-    expect(hits.results.some((note) => note.content.includes("software engineer"))).toBe(true);
-    const miss = searchNotes("zzz", store);
+    expect(hits.results[0].content).toMatch(/taurus/);
+    const miss = await searchNotes("zzz", store, embed);
     expect(miss.success).toBe(false);
     expect(miss.message).toMatch(/No note/);
   });

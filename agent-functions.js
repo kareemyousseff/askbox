@@ -1,32 +1,49 @@
 import notes from "./notes.json" with { type: "json" };
 import fs from "fs";
 
-export function searchNotes(query, store = notes) {
-  const words = String(query ?? "")
-    .toLowerCase()
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word.length >= 3);
-  if (words.length === 0) {
+function dot(a, b) {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+  return sum;
+}
+
+// Measured with gemini-embedding-001 on these notes (30 Sep 2026):
+// "what's my star sign" -> taurus 0.679, "where do I live" -> cairo 0.746,
+// "how old am I" -> age 0.653, "zzz" -> best note 0.628.
+const MIN_SCORE = 0.64;
+
+export async function searchNotes(query, store = notes, embed) {
+  const question = String(query ?? "").trim();
+  if (!question) {
     return { success: false, message: "No words found" };
   }
+  if (!embed) {
+    throw new Error("embed is required");
+  }
 
-  const results = store.notes.filter((note) => {
-    const text = `${note.title} ${note.content}`.toLowerCase();
-    return words.some((word) => text.includes(word));
-  });
-  if (results.length === 0) {
+  const texts = store.notes.map((note) => `${note.title} ${note.content}`);
+  const [queryVector] = await embed([question], "RETRIEVAL_QUERY");
+  const noteVectors = await embed(texts, "RETRIEVAL_DOCUMENT");
+  const scored = store.notes.map((note, i) => ({
+    note,
+    score: dot(queryVector, noteVectors[i]),
+  }));
+  console.log(
+    scored.map((row) => ({ title: row.note.title, score: row.score })),
+  );
+  scored.sort((a, b) => b.score - a.score);
+  const best = scored[0];
+  if (!best || best.score < MIN_SCORE) {
     return {
       success: false,
-      message:
-        "No note had those words. Try a different word. If you already tried, say I don't know.",
-      results,
+      message: "No note was close enough. Say I don't know.",
+      results: [],
     };
   }
   return {
     success: true,
     message: "Found matching notes. Answer only from these.",
-    results,
+    results: [best.note],
   };
 }
 export function addNote(title, content, store = notes) {

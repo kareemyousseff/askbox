@@ -1,7 +1,7 @@
 import { searchNotes } from "./agent-functions.js";
 import { addNote } from "./agent-functions.js";
 
-export async function askGemini(message, generateContent, store) {
+export async function askGemini(message, generateContent, store, embed) {
   const messages = message.map((turn) => turn.content);
   console.log(messages);
   if (!messages.some((line) => String(line ?? "").trim())) {
@@ -27,7 +27,7 @@ export async function askGemini(message, generateContent, store) {
      let call = calls.shift();
     let hits;
     if (call.name === "searchNotes") {
-      hits = searchNotes(call.args?.query, store);
+      hits = await searchNotes(call.args?.query, store, embed);
       console.log(call.args?.query)
       searches.push(call.args?.query);
     }

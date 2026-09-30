@@ -37,11 +37,11 @@ app.post("/ask", async (req, res) => {
               functionDeclarations: [
                 {
                   name: "searchNotes",
-                  description: "Search Kareem's notes. Returns matching notes or an empty list.",
+                  description: "Search Kareem's notes by meaning. Returns the closest note or an empty list.",
                   parametersJsonSchema: {
                     type: "object",
                     properties: {
-                      query: { type: "string", description: "Words to look for" },
+                      query: { type: "string", description: "The question to match against the notes" },
                     },
                     required: ["query"],
                   },
@@ -63,6 +63,13 @@ app.post("/ask", async (req, res) => {
           ],
         },
       });
+    }, undefined, async (texts, taskType) => {
+      const response = await ai.models.embedContent({
+        model: "gemini-embedding-001",
+        contents: texts,
+        config: { taskType },
+      });
+      return response.embeddings.map((item) => item.values);
     });
     res.json({ reply, searches });
   } catch (error) {
