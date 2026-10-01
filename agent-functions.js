@@ -40,7 +40,9 @@ export async function searchNotes(query, store = notes, embed) {
       results: [],
     };
   }
-  const matched = scored.filter((row) => row.score >= MIN_SCORE);
+  const matched = scored.filter(
+    (row) => row.score >= MIN_SCORE && best.score - row.score <= 0.05,
+  );
   return {
     success: true,
     message: "Found matching notes. Use every note in results. Do not answer from only the first one.",
