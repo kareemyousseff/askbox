@@ -10,6 +10,11 @@ export async function askGemini(message, generateContent, store, embed) {
 
   let contents =message.map(turn => ({ role: turn.role, parts: [{ text: turn.content }] }));
   let recents = contents.slice(-5);
+  const olderUsers = contents.slice(0, -5).filter((turn) => turn.role === "user");
+  if (olderUsers.length > 0) {
+    const recap = olderUsers.map((turn) => turn.parts[0].text).join("\n");
+    recents = [{ role: "user", parts: [{ text: "Earlier:\n" + recap }] }, ...recents];
+  }
   let response = await generateContent(recents);
   let calls = response.functionCalls ?? [];
   let count = 0;
@@ -26,14 +31,18 @@ export async function askGemini(message, generateContent, store, embed) {
   while (calls.length > 0) {
      let call = calls.shift();
     let hits;
-    if (call.name === "searchNotes") {
-      hits = await searchNotes(call.args?.query, store, embed);
-      console.log(call.args?.query)
-      searches.push(call.args?.query);
-    }
+    try {
+      if (call.name === "searchNotes") {
+        hits = await searchNotes(call.args?.query, store, embed);
+        console.log(call.args?.query);
+        searches.push(call.args?.query);
+      }
       if (call.name === "addNote") {
         hits = addNote(call.args?.title, call.args?.content, store);
       }
+    } catch (error) {
+      hits = { success: false, message: error.message };
+    }
       parts.push({
        
             functionResponse: {

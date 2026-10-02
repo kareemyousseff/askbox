@@ -226,6 +226,59 @@ describe("askGemini", () => {
     expect(reply.searches).toEqual(["how old is kareem", "where does he live"]);
   });
 
+  it("sends a tool failure back so the request stays alive", async () => {
+    let step = 0;
+    const modelAsk = {
+      role: "model",
+      parts: [{ functionCall: { name: "searchNotes", args: { query: "kareem" } } }],
+    };
+
+    const reply = await askGemini(
+      [{ role: "user", content: "how old is kareem" }],
+      async (contents) => {
+        step += 1;
+        if (step === 1) {
+          return {
+            functionCalls: [{ name: "searchNotes", args: { query: "kareem" } }],
+            candidates: [{ content: modelAsk }],
+          };
+        }
+        expect(step).toBe(2);
+        const hits = contents[contents.length - 1].parts[0].functionResponse.response.hits;
+        expect(hits.success).toBe(false);
+        expect(hits.message).toMatch(/embed is down/);
+        return { text: "I could not search." };
+      },
+      copyNotes(),
+      async () => {
+        throw new Error("embed is down");
+      },
+    );
+
+    expect(reply.reply).toBe("I could not search.");
+  });
+
+  it("keeps dropped user lines in front of the last five turns", async () => {
+    const turns = [
+      { role: "user", content: "favorite color is blue" },
+      { role: "model", content: "ok" },
+      { role: "user", content: "a" },
+      { role: "model", content: "b" },
+      { role: "user", content: "c" },
+      { role: "model", content: "d" },
+      { role: "user", content: "what color did I say?" },
+    ];
+
+    const reply = await askGemini(turns, async (contents) => {
+      expect(contents).toHaveLength(6);
+      expect(contents[0].parts[0].text).toBe("Earlier:\nfavorite color is blue");
+      expect(contents[1].parts[0].text).toBe("a");
+      return { text: "blue" };
+    });
+
+    expect(reply.reply).toBe("blue");
+  });
+
   it("stops after five tool laps", async () => {
     let step = 0;
     const modelAsk = {
