@@ -10,7 +10,26 @@ function App() {
     return storedTurns ? JSON.parse(storedTurns) : [];
   });
   const nextTurns = [...turns, { role: "user", content: message }];
+  const [pending, setPending] = useState(false);
 
+  async function onApprove(pending) {
+    const response = await fetch("http://localhost:3000/approve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: pending.title, content: pending.content }),
+    });
+    const data = await response.json();
+    setPending(false);
+  }
+  async function onReject(pending) {
+    const response = await fetch("http://localhost:3000/reject", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: pending.title, content: pending.content }),
+    });
+    const data = await response.json();
+    setPending(false);
+  }
   async function onSubmit(event) {
     event.preventDefault();
     setWaiting(true);
@@ -31,6 +50,7 @@ function App() {
         setTurns(updatedTurns);
         localStorage.setItem("turns", JSON.stringify(updatedTurns));
         setMessage("");
+        setPending(data.pending || false);
       }
     } catch {
       setReply("Could not reach the server.");
@@ -62,6 +82,10 @@ function App() {
             {turn.role === "user" ? "You" : "Gemini"}: {turn.content}
           </p>
           {turn.searches ? <p>Searches: {turn.searches.join(", ")}</p> : null}
+          {turn.pending ? <p>Pending: {turn.pending.title}</p> : null}
+          {turn.pending ? <p>Pending: {turn.pending.content}</p> : null}
+          {turn.pending ? <button onClick={() => onApprove(turn.pending)}>Approve</button> : null}
+          {turn.pending ? <button onClick={() => onReject(turn.pending)}>Reject</button> : null}
         </div>
       ))}
       <pre>{JSON.stringify(turns, null, 2)}</pre>

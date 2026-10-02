@@ -49,7 +49,7 @@ export async function searchNotes(query, store = notes, embed) {
     results: matched.map((row) => row.note),
   };
 }
-export function addNote(title, content, store = notes) {
+export async function addNote(title, content, store = notes) {
   if (!title || !content) {
     return { success: false, message: "Title and content are required" };
   }

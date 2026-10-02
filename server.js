@@ -25,7 +25,7 @@ app.use(express.json());
 
 app.post("/ask", async (req, res) => {
   try {
-    const { reply, searches } = await askGemini(req.body?.message, async (contents) => {
+    const { reply, searches, pending } = await askGemini(req.body?.message, async (contents) => {
       return ai.models.generateContent({
         model: "gemini-3.5-flash-lite",
         contents,
@@ -71,10 +71,21 @@ app.post("/ask", async (req, res) => {
       });
       return response.embeddings.map((item) => item.values);
     });
-    res.json({ reply, searches });
+    res.json({ reply, searches, pending });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+});
+
+app.post("/approve", async (req, res) => {
+  const { title, content } = req.body;
+  const hits = await addNote(title, content);
+  res.json({ success: hits.success, message: hits.message });
+});
+
+app.post("/reject", async (req, res) => {
+  const { title, content } = req.body;
+  res.json({ success: true, message: "Note rejected" });
 });
 
 app.listen(3000, () => {

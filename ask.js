@@ -19,6 +19,7 @@ export async function askGemini(message, generateContent, store, embed) {
   let calls = response.functionCalls ?? [];
   let count = 0;
   let searches =[];
+  let pending = false;
 
   while(calls.length > 0) {
     count++;
@@ -38,7 +39,16 @@ export async function askGemini(message, generateContent, store, embed) {
         searches.push(call.args?.query);
       }
       if (call.name === "addNote") {
-        hits = addNote(call.args?.title, call.args?.content, store);
+        const title = call.args?.title;
+        const content = call.args?.content;
+        pending = { title, content };
+        hits = {
+          success: false,
+          pending: true,
+          message: "Not saved. The user has to approve.",
+          title,
+          content,
+        };
       }
     } catch (error) {
       hits = { success: false, message: error.message };
@@ -64,5 +74,5 @@ export async function askGemini(message, generateContent, store, embed) {
     throw new Error("Gemini returned no text");
   }
 
-  return { reply, searches };
+  return { reply, searches , pending};
 };
