@@ -177,6 +177,55 @@ describe("askGemini", () => {
     expect(store.notes.some((note) => note.title === "test-both")).toBe(true);
   });
 
+  it("searches again when the first result misses the second fact", async () => {
+    let step = 0;
+    const ageAsk = {
+      role: "model",
+      parts: [{ functionCall: { name: "searchNotes", args: { query: "how old is kareem" } } }],
+    };
+    const cityAsk = {
+      role: "model",
+      parts: [{ functionCall: { name: "searchNotes", args: { query: "where does he live" } } }],
+    };
+    async function embed(texts) {
+      return texts.map((text) => {
+        const line = text.toLowerCase();
+        if (line.includes("old") || line.includes("18")) return [1, 0];
+        if (line.includes("live") || line.includes("cairo")) return [0, 1];
+        return [0, 0];
+      });
+    }
+
+    const reply = await askGemini(
+      [{ role: "user", content: "how old is kareem and where does he live?" }],
+      async (contents) => {
+        step += 1;
+        if (step === 1) {
+          return {
+            functionCalls: [{ name: "searchNotes", args: { query: "how old is kareem" } }],
+            candidates: [{ content: ageAsk }],
+          };
+        }
+        if (step === 2) {
+          const hits = contents[contents.length - 1].parts[0].functionResponse.response.hits.results;
+          expect(hits.some((note) => note.content.includes("18"))).toBe(true);
+          expect(hits.some((note) => note.content.toLowerCase().includes("cairo"))).toBe(false);
+          return {
+            functionCalls: [{ name: "searchNotes", args: { query: "where does he live" } }],
+            candidates: [{ content: cityAsk }],
+          };
+        }
+        expect(step).toBe(3);
+        return { text: "Kareem is 18 and lives in cairo" };
+      },
+      copyNotes(),
+      embed,
+    );
+
+    expect(reply.reply).toBe("Kareem is 18 and lives in cairo");
+    expect(reply.searches).toEqual(["how old is kareem", "where does he live"]);
+  });
+
   it("stops after five tool laps", async () => {
     let step = 0;
     const modelAsk = {
