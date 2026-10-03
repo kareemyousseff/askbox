@@ -1,6 +1,7 @@
 import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
+import { addNote } from "./agent-functions.js";
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {

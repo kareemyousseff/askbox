@@ -18,8 +18,15 @@ function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: pending.title, content: pending.content }),
     });
-    const data = await response.json();
-    setPending(false);
+    await response.json();
+    setReply("Note added");
+    setTurns((current) => {
+      const updated = current.map((turn) =>
+        turn.pending?.title === pending.title ? { ...turn, pending: null } : turn,
+      );
+      localStorage.setItem("turns", JSON.stringify(updated));
+      return updated;
+    });
   }
   async function onReject(pending) {
     const response = await fetch("http://localhost:3000/reject", {
@@ -27,8 +34,15 @@ function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: pending.title, content: pending.content }),
     });
-    const data = await response.json();
-    setPending(false);
+    await response.json();
+    setReply("Note cancelled");
+    setTurns((current) => {
+      const updated = current.map((turn) =>
+        turn.pending?.title === pending.title ? { ...turn, pending: null } : turn,
+      );
+      localStorage.setItem("turns", JSON.stringify(updated));
+      return updated;
+    });
   }
   async function onSubmit(event) {
     event.preventDefault();
@@ -45,7 +59,7 @@ function App() {
       if (data.reply) {
         const updatedTurns = [
           ...nextTurns,
-          { role: "model", content: data.reply, searches: data.searches || [] },
+          { role: "model", content: data.reply, searches: data.searches || [], pending: data.pending || false },
         ];
         setTurns(updatedTurns);
         localStorage.setItem("turns", JSON.stringify(updatedTurns));
@@ -84,8 +98,8 @@ function App() {
           {turn.searches ? <p>Searches: {turn.searches.join(", ")}</p> : null}
           {turn.pending ? <p>Pending: {turn.pending.title}</p> : null}
           {turn.pending ? <p>Pending: {turn.pending.content}</p> : null}
-          {turn.pending ? <button onClick={() => onApprove(turn.pending)}>Approve</button> : null}
-          {turn.pending ? <button onClick={() => onReject(turn.pending)}>Reject</button> : null}
+          {turn.pending ? <button onClick={() => onApprove(turn.pending) } >Approve</button> : null}
+          {turn.pending ? <button onClick={() => onReject(turn.pending)} >Reject</button> : null}
         </div>
       ))}
       <pre>{JSON.stringify(turns, null, 2)}</pre>
