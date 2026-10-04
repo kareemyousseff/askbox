@@ -60,3 +60,18 @@ export async function addNote(title, content, store = notes) {
   }
   return { success: true, message: "Note added successfully" };
 }
+
+export async function searchDocs(query, files, embed) {
+  const words = String(query ?? "").toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
+  const texts = files.map((file) => file.text);
+  const [queryVector] = await embed([query], "RETRIEVAL_QUERY");
+  const docVectors = await embed(texts, "RETRIEVAL_DOCUMENT");
+  const scored = files.map((file, i) => {
+    const text = file.text.toLowerCase();
+    const keyword = words.filter((word) => text.includes(word)).length;
+    const vector = dot(queryVector, docVectors[i]);
+    return { file, score: keyword + vector };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0].file;
+}
