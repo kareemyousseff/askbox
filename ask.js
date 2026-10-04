@@ -19,6 +19,7 @@ export async function askGemini(message, generateContent, store, embed) {
   let calls = response.functionCalls ?? [];
   let count = 0;
   let searches =[];
+  let made = [];
   let pending = false;
 
   while(calls.length > 0) {
@@ -31,6 +32,7 @@ export async function askGemini(message, generateContent, store, embed) {
 
   while (calls.length > 0) {
      let call = calls.shift();
+    made.push(call.name);
     let hits;
     try {
       if (call.name === "searchNotes") {
@@ -74,5 +76,5 @@ export async function askGemini(message, generateContent, store, embed) {
     throw new Error("Gemini returned no text");
   }
 
-  return { reply, searches , pending};
+  return { reply, searches, pending, calls: made };
 };
