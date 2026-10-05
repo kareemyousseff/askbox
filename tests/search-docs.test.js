@@ -19,4 +19,13 @@ describe("searchDocs", () => {
     const best = await searchDocs("how old is kareem?", files, fakeEmbed);
     expect(best.name).toBe("b.txt");
   });
+
+  it("returns null when no file contains a query word", async () => {
+    const files = [
+      { name: "a.txt", text: readFileSync("docs/a.txt", "utf8") },
+      { name: "b.txt", text: readFileSync("docs/b.txt", "utf8") },
+    ];
+    const best = await searchDocs("capital of france", files, fakeEmbed);
+    expect(best).toBe(null);
+  });
 });

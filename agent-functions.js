@@ -70,8 +70,9 @@ export async function searchDocs(query, files, embed) {
     const text = file.text.toLowerCase();
     const keyword = words.filter((word) => text.includes(word)).length;
     const vector = dot(queryVector, docVectors[i]);
-    return { file, score: keyword + vector };
+    return { file, keyword, score: keyword + vector };
   });
   scored.sort((a, b) => b.score - a.score);
+  if (scored[0].keyword === 0) return null;
   return scored[0].file;
 }
