@@ -258,6 +258,31 @@ describe("askGemini", () => {
     expect(reply.reply).toBe("I could not search.");
   });
 
+  it("returns I don't know without another model call when search misses", async () => {
+    let step = 0;
+    const modelAsk = {
+      role: "model",
+      parts: [{ functionCall: { name: "searchNotes", args: { query: "capital of france" } } }],
+    };
+
+    const reply = await askGemini(
+      [{ role: "user", content: "capital of france" }],
+      async () => {
+        step += 1;
+        if (step > 1) throw new Error("generateContent should not run");
+        return {
+          functionCalls: [{ name: "searchNotes", args: { query: "capital of france" } }],
+          candidates: [{ content: modelAsk }],
+        };
+      },
+      copyNotes(),
+      fakeEmbed,
+    );
+
+    expect(reply.reply).toBe("I don't know");
+    expect(step).toBe(1);
+  });
+
   it("keeps dropped user lines in front of the last five turns", async () => {
     const turns = [
       { role: "user", content: "favorite color is blue" },

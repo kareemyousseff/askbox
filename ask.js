@@ -1,6 +1,17 @@
 import { searchNotes } from "./agent-functions.js";
 import { addNote } from "./agent-functions.js";
 
+function searchMissed(parts) {
+  const searches = parts.filter((part) => part.functionResponse?.name === "searchNotes");
+  if (searches.length === 0 || searches.length !== parts.length) return false;
+  return searches.every((part) => {
+    const hits = part.functionResponse.response.hits;
+    if (!hits || hits.success !== false) return false;
+    if (Array.isArray(hits.results)) return hits.results.length === 0;
+    return hits.message === "No words found";
+  });
+}
+
 export async function askGemini(message, generateContent, store, embed) {
   const messages = message.map((turn) => turn.content);
   console.log(messages);
@@ -64,6 +75,9 @@ export async function askGemini(message, generateContent, store, embed) {
           },
         });
     
+    }
+    if (searchMissed(parts)) {
+      return { reply: "I don't know", searches, pending, calls: made };
     }
     recents.push({ role: "user", parts });
     console.log(JSON.stringify(recents, null, 2));

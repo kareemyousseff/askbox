@@ -76,3 +76,12 @@ export async function searchDocs(query, files, embed) {
   if (scored[0].keyword === 0) return null;
   return scored[0].file;
 }
+
+export async function answerFromDocs(query, files, embed, generateContent) {
+  const file = await searchDocs(query, files, embed);
+  if (!file) return "I don't know";
+  const response = await generateContent([
+    { role: "user", parts: [{ text: file.text }] },
+  ]);
+  return String(response?.text ?? "").trim();
+}
