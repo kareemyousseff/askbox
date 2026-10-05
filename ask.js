@@ -1,5 +1,4 @@
 import { searchNotes } from "./agent-functions.js";
-import { addNote } from "./agent-functions.js";
 
 function searchMissed(parts) {
   const searches = parts.filter((part) => part.functionResponse?.name === "searchNotes");
