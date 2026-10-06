@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
 import { addNote } from "./agent-functions.js";
 import { judge } from "./judge.js";
+import { plan } from "./plan.js";
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -27,6 +28,14 @@ app.use(express.json());
 
 app.post("/ask", async (req, res) => {
   try {
+    const turns = Array.isArray(req.body?.message) ? req.body.message : [];
+    const question = [...turns].reverse().find((turn) => turn.role === "user")?.content ?? "";
+    const checklist = await plan(question, async (contents) => {
+      return ai.models.generateContent({
+        model: "gemini-3.5-flash-lite",
+        contents,
+      });
+    });
     const { reply, searches, pending } = await askGemini(req.body?.message, async (contents) => {
       return ai.models.generateContent({
         model: "gemini-3.5-flash-lite",
@@ -90,7 +99,7 @@ app.post("/ask", async (req, res) => {
       });
     });
     const judgment = String(judged?.text ?? "").trim();
-    res.json({ reply, searches, pending, judgment });
+    res.json({ reply, searches, pending, judgment, checklist });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -103,7 +112,6 @@ app.post("/approve", async (req, res) => {
 });
 
 app.post("/reject", async (req, res) => {
-  const { title, content } = req.body;
   res.json({ success: true, message: "Note rejected" });
 });
 

@@ -65,6 +65,7 @@ function App() {
             searches: data.searches || [],
             pending: data.pending || false,
             judgment: data.judgment || "",
+            checklist: data.checklist || [],
           },
         ];
         setTurns(updatedTurns);
@@ -101,6 +102,9 @@ function App() {
           <p>
             {turn.role === "user" ? "You" : "Gemini"}: {turn.content}
           </p>
+          {turn.checklist?.length ? (
+            <p>Plan: {turn.checklist.map((row) => row.item).join(", ")}</p>
+          ) : null}
           {turn.searches ? <p>Searches: {turn.searches.join(", ")}</p> : null}
           {turn.judgment ? <p>Judge: {turn.judgment}</p> : null}
           {turn.pending ? <p>Pending: {turn.pending.title}</p> : null}
