@@ -2,6 +2,7 @@ import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
 import { addNote } from "./agent-functions.js";
+import { judge } from "./judge.js";
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -72,7 +73,24 @@ app.post("/ask", async (req, res) => {
       });
       return response.embeddings.map((item) => item.values);
     });
-    res.json({ reply, searches, pending });
+    const rubric = [
+      "Pass if the reply is a short greeting.",
+      "Pass if the reply is exactly I don't know.",
+      "Fail if the reply states a fact and no search ran.",
+      "Searches: " + (searches?.length ? searches.join(", ") : "none"),
+    ].join("\n");
+    const judged = await judge(reply, rubric, async (contents) => {
+      return ai.models.generateContent({
+        model: "gemini-3.5-flash-lite",
+        contents,
+        config: {
+          systemInstruction:
+            "Grade the reply against the rules. Start with pass or fail, then quote the rule that decided it.",
+        },
+      });
+    });
+    const judgment = String(judged?.text ?? "").trim();
+    res.json({ reply, searches, pending, judgment });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

@@ -59,7 +59,13 @@ function App() {
       if (data.reply) {
         const updatedTurns = [
           ...nextTurns,
-          { role: "model", content: data.reply, searches: data.searches || [], pending: data.pending || false },
+          {
+            role: "model",
+            content: data.reply,
+            searches: data.searches || [],
+            pending: data.pending || false,
+            judgment: data.judgment || "",
+          },
         ];
         setTurns(updatedTurns);
         localStorage.setItem("turns", JSON.stringify(updatedTurns));
@@ -96,6 +102,7 @@ function App() {
             {turn.role === "user" ? "You" : "Gemini"}: {turn.content}
           </p>
           {turn.searches ? <p>Searches: {turn.searches.join(", ")}</p> : null}
+          {turn.judgment ? <p>Judge: {turn.judgment}</p> : null}
           {turn.pending ? <p>Pending: {turn.pending.title}</p> : null}
           {turn.pending ? <p>Pending: {turn.pending.content}</p> : null}
           {turn.pending ? <button onClick={() => onApprove(turn.pending) } >Approve</button> : null}
