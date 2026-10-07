@@ -12,7 +12,11 @@ describe("grade", () => {
   it("fails a right sentence when searchNotes never ran", async () => {
     const actual = await askGemini(
       [{ role: "user", content: task.question }],
-      async () => ({ text: "Kareem is 18" }),
+      async (contents) => {
+        const text = contents[0]?.parts?.[0]?.text ?? "";
+        if (text.includes("checklist")) return { text: "[]" };
+        return { text: "Kareem is 18" };
+      },
     );
 
     const result = grade(task, actual);

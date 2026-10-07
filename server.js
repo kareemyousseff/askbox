@@ -3,7 +3,6 @@ import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
 import { addNote } from "./agent-functions.js";
 import { judge } from "./judge.js";
-import { plan } from "./plan.js";
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -28,19 +27,13 @@ app.use(express.json());
 
 app.post("/ask", async (req, res) => {
   try {
-    const turns = Array.isArray(req.body?.message) ? req.body.message : [];
-    const question = [...turns].reverse().find((turn) => turn.role === "user")?.content ?? "";
-    const checklist = await plan(question, async (contents) => {
+    const { reply, searches, pending, checklist } = await askGemini(req.body?.message, async (contents) => {
+      const text = contents[0]?.parts?.[0]?.text ?? "";
+      const planning = text.startsWith("Split this question into checklist items.");
       return ai.models.generateContent({
         model: "gemini-3.5-flash-lite",
         contents,
-      });
-    });
-    const { reply, searches, pending } = await askGemini(req.body?.message, async (contents) => {
-      return ai.models.generateContent({
-        model: "gemini-3.5-flash-lite",
-        contents,
-        config: {
+        config: planning ? undefined : {
           systemInstruction:
             "Answer a fact only from searchNotes results. If results has more than one note, the answer must include every note. If searchNotes returns success false, reply exactly I don't know. If they just say hello, reply with a short greeting. Do not search. If addNote returns success true, say the note was saved. Do not answer I don't know for that.",
           tools: [
