@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "@langchain/langgraph": "^1.4.20",
     "express": "^5.1.0"
   },
   "devDependencies": {
