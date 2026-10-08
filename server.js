@@ -27,7 +27,7 @@ app.use(express.json());
 
 app.post("/ask", async (req, res) => {
   try {
-    const { reply, searches, pending, checklist } = await askGemini(req.body?.message, async (contents) => {
+    const { reply, searches, pending, checklist, steps } = await askGemini(req.body?.message, async (contents) => {
       const text = contents[0]?.parts?.[0]?.text ?? "";
       const planning = text.startsWith("Split this question into checklist items.");
       return ai.models.generateContent({
@@ -92,7 +92,7 @@ app.post("/ask", async (req, res) => {
       });
     });
     const judgment = String(judged?.text ?? "").trim();
-    res.json({ reply, searches, pending, judgment, checklist });
+    res.json({ reply, searches, pending, judgment, checklist, steps: [...steps, "judge"] });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

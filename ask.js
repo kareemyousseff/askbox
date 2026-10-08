@@ -23,6 +23,15 @@ function recentChat(message) {
   return recentTurns;
 }
 
+function stepLabel(step, patch) {
+  if (step === "plan") {
+    const items = (patch.checklist ?? []).map((row) => row.item).filter(Boolean);
+    return items.length ? `plan: ${items.join(", ")}` : "plan";
+  }
+  if (step === "search") return `search: ${patch.previousItem}`;
+  return step;
+}
+
 export async function askGemini(message, generateContent, store, embed) {
   const messages = message.map((turn) => turn.content);
   if (!messages.some((line) => String(line ?? "").trim())) {
@@ -107,7 +116,7 @@ export async function askGemini(message, generateContent, store, embed) {
     .addEdge("answer", END)
     .compile();
 
-  const result = await app.invoke({
+  const startState = {
     checklist: [],
     searchCount: 0,
     previousItem: null,
@@ -115,7 +124,17 @@ export async function askGemini(message, generateContent, store, embed) {
     calls: [],
     matchedNotes: [],
     reply: "",
-  });
+  };
+  const result = { ...startState };
+  const steps = [];
+  const stream = await app.stream(startState, { streamMode: "updates" });
+  for await (const update of stream) {
+    for (const [step, patch] of Object.entries(update)) {
+      Object.assign(result, patch);
+      const label = stepLabel(step, patch);
+      steps.push(label);
+    }
+  }
 
   return {
     reply: result.reply,
@@ -123,5 +142,6 @@ export async function askGemini(message, generateContent, store, embed) {
     pending: false,
     calls: result.calls,
     checklist: result.checklist,
+    steps,
   };
 }

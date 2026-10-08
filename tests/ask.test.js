@@ -79,6 +79,7 @@ describe("askGemini", () => {
 
     expect(reply.searches).toEqual(["age", "city"]);
     expect(reply.checklist.map((row) => row.done)).toEqual([true, true]);
+    expect(reply.steps).toEqual(["plan: age, city", "search: age", "search: city", "answer"]);
     expect(step).toBe(2);
   });
 
