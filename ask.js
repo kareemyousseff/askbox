@@ -1,5 +1,5 @@
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
-import { searchNotes } from "./agent-functions.js";
+import { connectNotes } from "./notes-mcp.js";
 import { plan } from "./plan.js";
 
 const GraphState = Annotation.Root({
@@ -40,6 +40,18 @@ export async function askGemini(message, generateContent, store, embed) {
 
   const question = [...message].reverse().find((turn) => turn.role === "user")?.content ?? "";
   const recentTurns = recentChat(message);
+  let notesClient;
+
+  async function callSearch(query) {
+    if (!notesClient) notesClient = await connectNotes(store, embed);
+    const response = await notesClient.callTool({
+      name: "searchNotes",
+      arguments: { query },
+    });
+    const text = response.content.find((part) => part.type === "text")?.text;
+    if (!text) throw new Error("searchNotes returned no text");
+    return JSON.parse(text);
+  }
 
   async function planStep() {
     return { checklist: await plan(question, generateContent) };
@@ -55,7 +67,7 @@ export async function askGemini(message, generateContent, store, embed) {
     const matchedNotes = [...state.matchedNotes];
     let searchResult;
     try {
-      searchResult = await searchNotes(current.item, store, embed);
+      searchResult = await callSearch(current.item);
     } catch (error) {
       searchResult = { success: false, message: error.message };
     }
@@ -127,13 +139,17 @@ export async function askGemini(message, generateContent, store, embed) {
   };
   const result = { ...startState };
   const steps = [];
-  const stream = await app.stream(startState, { streamMode: "updates" });
-  for await (const update of stream) {
-    for (const [step, patch] of Object.entries(update)) {
-      Object.assign(result, patch);
-      const label = stepLabel(step, patch);
-      steps.push(label);
+  try {
+    const stream = await app.stream(startState, { streamMode: "updates" });
+    for await (const update of stream) {
+      for (const [step, patch] of Object.entries(update)) {
+        Object.assign(result, patch);
+        const label = stepLabel(step, patch);
+        steps.push(label);
+      }
     }
+  } finally {
+    if (notesClient) await notesClient.close();
   }
 
   return {
