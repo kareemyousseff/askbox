@@ -47,10 +47,11 @@ app.post("/ask", async (req, res) => {
       return response.embeddings.map((item) => item.values);
     });
     const rubric = [
+      "Searches: " + (searches?.length ? searches.join(", ") : "none"),
       "Pass if the reply is a short greeting.",
       "Pass if the reply is exactly I don't know.",
-      "Fail if the reply states a fact and no search ran.",
-      "Searches: " + (searches?.length ? searches.join(", ") : "none"),
+      "Pass if Searches is not none.",
+      "Fail if the reply states a fact and Searches is none.",
     ].join("\n");
     const judged = await judge(reply, rubric, async (contents) => {
       return ai.models.generateContent({
@@ -58,7 +59,7 @@ app.post("/ask", async (req, res) => {
         contents,
         config: {
           systemInstruction:
-            "Grade the reply against the rules. Start with pass or fail, then quote the rule that decided it.",
+            "Grade the reply against the rules. The Searches line is the record of what ran. none means no search ran. Do not fail when Searches is not none. Start with pass or fail, then quote the rule that decided it.",
         },
       });
     });
