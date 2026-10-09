@@ -1,0 +1,8 @@
+node_modules
+web
+.git
+.env
+.env.*
+!.env.example
+.cursor
+tests
