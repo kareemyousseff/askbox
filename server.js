@@ -36,35 +36,6 @@ app.post("/ask", async (req, res) => {
         config: planning ? undefined : {
           systemInstruction:
             "Answer a fact only from searchNotes results. If results has more than one note, the answer must include every note. If searchNotes returns success false, reply exactly I don't know. If they just say hello, reply with a short greeting. Do not search. If addNote returns success true, say the note was saved. Do not answer I don't know for that.",
-          tools: [
-            {
-              functionDeclarations: [
-                {
-                  name: "searchNotes",
-                  description: "Look up a fact in Kareem's notes by meaning. Call this when the user asks for a fact. Do not call it for a greeting like hello. The result is { success, message, results }. results holds every note that was close enough, best first. The answer must include every note in results. If success is false, reply exactly I don't know.",
-                  parametersJsonSchema: {
-                    type: "object",
-                    properties: {
-                      query: { type: "string", description: "The question to match against the notes" },
-                    },
-                    required: ["query"],
-                  },
-                },
-                {
-                  name: "addNote",
-                  description: "Save a new note when the user asks to remember or add something. The result is { success, message }. If success is true, tell the user the note was saved. If success is false, tell the user the message.",
-                  parametersJsonSchema: {
-                    type: "object",
-                    properties: {
-                      title: { type: "string", description: "The title of the note" },
-                      content: { type: "string", description: "The content of the note" },
-                    },
-                    required: ["title", "content"],
-                  },
-                },
-              ],
-            },
-          ],
         },
       });
     }, undefined, async (texts, taskType) => {
