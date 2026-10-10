@@ -34,11 +34,20 @@ function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: pending.title, content: pending.content }),
     });
-    await response.json();
+    const data = await response.json();
     setReply("Note cancelled");
     setTurns((current) => {
       const updated = current.map((turn) =>
-        turn.pending?.title === pending.title ? { ...turn, pending: null } : turn,
+        turn.pending?.title === pending.title
+          ? {
+              ...turn,
+              pending: null,
+              cost: {
+                ...(turn.cost ?? { tokens: 0, dollars: 0, calls: 0 }),
+                stopped: data.cost?.stopped ?? "rejected",
+              },
+            }
+          : turn,
       );
       localStorage.setItem("turns", JSON.stringify(updated));
       return updated;
@@ -56,17 +65,18 @@ function App() {
       });
       const data = await response.json();
       setReply(data.reply || data.error || "No reply");
-      if (data.reply) {
+      if (data.reply || data.error) {
         const updatedTurns = [
           ...nextTurns,
           {
             role: "model",
-            content: data.reply,
+            content: data.reply || data.error,
             searches: data.searches || [],
             pending: data.pending || false,
             judgment: data.judgment || "",
             checklist: data.checklist || [],
             steps: data.steps || [],
+            cost: data.cost || null,
           },
         ];
         setTurns(updatedTurns);
@@ -109,6 +119,11 @@ function App() {
           ) : null}
           {turn.searches ? <p>Searches: {turn.searches.join(", ")}</p> : null}
           {turn.judgment ? <p>Judge: {turn.judgment}</p> : null}
+          {turn.cost ? (
+            <p>
+              Cost: {turn.cost.tokens} tokens, ${Number(turn.cost.dollars).toFixed(6)} paid-tier estimate, {turn.cost.stopped}
+            </p>
+          ) : null}
           {turn.pending ? <p>Pending: {turn.pending.title}</p> : null}
           {turn.pending ? <p>Pending: {turn.pending.content}</p> : null}
           {turn.pending ? <button onClick={() => onApprove(turn.pending) } >Approve</button> : null}
