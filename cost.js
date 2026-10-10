@@ -16,11 +16,11 @@ export function priceCall(model, usage) {
   return { model, inputTokens, outputTokens, dollars };
 }
 
-export function totalCost(calls, stopped) {
+export function totalCost(aiCalls, stopped) {
   return {
-    tokens: calls.reduce((sum, call) => sum + call.inputTokens + call.outputTokens, 0),
-    dollars: calls.reduce((sum, call) => sum + call.dollars, 0),
-    calls: calls.length,
+    tokens: aiCalls.reduce((sum, aiCall) => sum + aiCall.inputTokens + aiCall.outputTokens, 0),
+    dollars: aiCalls.reduce((sum, aiCall) => sum + aiCall.dollars, 0),
+    aiCalls: aiCalls.length,
     stopped,
   };
 }

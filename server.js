@@ -27,9 +27,9 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 app.post("/ask", async (req, res) => {
-  const calls = [];
+  const aiCalls = [];
   const track = (model, response) => {
-    calls.push(priceCall(model, response?.usageMetadata));
+    aiCalls.push(priceCall(model, response?.usageMetadata));
     return response;
   };
   try {
@@ -73,11 +73,11 @@ app.post("/ask", async (req, res) => {
       return track("gemini-3.5-flash-lite", response);
     });
     const judgment = String(judged?.text ?? "").trim();
-    const cost = totalCost(calls, "answered");
+    const cost = totalCost(aiCalls, "answered");
     res.json({ reply, searches, pending, judgment, checklist, steps: [...steps, "judge"], cost });
   } catch (error) {
     const stopped = error.message === "Too many calls" ? "cap" : "tool error";
-    res.status(400).json({ error: error.message, cost: totalCost(calls, stopped) });
+    res.status(400).json({ error: error.message, cost: totalCost(aiCalls, stopped) });
   }
 });
 

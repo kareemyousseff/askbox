@@ -43,7 +43,7 @@ function App() {
               ...turn,
               pending: null,
               cost: {
-                ...(turn.cost ?? { tokens: 0, dollars: 0, calls: 0 }),
+                ...(turn.cost ?? { tokens: 0, dollars: 0, aiCalls: 0 }),
                 stopped: data.cost?.stopped ?? "rejected",
               },
             }
