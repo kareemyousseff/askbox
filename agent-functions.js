@@ -11,6 +11,17 @@ function dot(a, b) {
 // "what's my star sign" -> taurus 0.679, "where do I live" -> cairo 0.746,
 // "how old am I" -> age 0.653, "zzz" -> best note 0.628.
 const MIN_SCORE = 0.64;
+const savedRows = new WeakMap();
+
+async function rowsFor(store, embed) {
+  const saved = savedRows.get(store);
+  if (saved?.length === store.notes.length) return saved;
+  const texts = store.notes.map((note) => `${note.title} ${note.content}`);
+  const vectors = await embed(texts, "RETRIEVAL_DOCUMENT");
+  const rows = store.notes.map((note, i) => ({ note, vector: vectors[i] }));
+  savedRows.set(store, rows);
+  return rows;
+}
 
 export async function searchNotes(query, store = notes, embed) {
   const question = String(query ?? "").trim();
@@ -21,12 +32,11 @@ export async function searchNotes(query, store = notes, embed) {
     throw new Error("embed is required");
   }
 
-  const texts = store.notes.map((note) => `${note.title} ${note.content}`);
+  const rows = await rowsFor(store, embed);
   const [queryVector] = await embed([question], "RETRIEVAL_QUERY");
-  const noteVectors = await embed(texts, "RETRIEVAL_DOCUMENT");
-  const scored = store.notes.map((note, i) => ({
-    note,
-    score: dot(queryVector, noteVectors[i]),
+  const scored = rows.map((row) => ({
+    note: row.note,
+    score: dot(queryVector, row.vector),
   }));
   console.log(
     scored.map((row) => ({ title: row.note.title, score: row.score })),

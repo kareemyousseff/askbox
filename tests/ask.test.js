@@ -189,4 +189,26 @@ describe("searchNotes", () => {
     expect(hits.success).toBe(true);
     expect(hits.results.map((note) => note.content)).toEqual(["cookies", "pasta"]);
   });
+
+  it("embeds the notes once and the question on every search", async () => {
+    const store = copyNotes();
+    let documentCalls = 0;
+    async function embed(texts, taskType) {
+      if (taskType === "RETRIEVAL_DOCUMENT") documentCalls += 1;
+      return texts.map((text) => {
+        const line = text.toLowerCase();
+        if (line.includes("age") || line.includes("18")) return [1, 0];
+        return [0, 1];
+      });
+    }
+
+    const first = await searchNotes("what is kareem's age", store, embed);
+    const second = await searchNotes("what is kareem's age", store, embed);
+    expect(first.results[0].content).toMatch(/18/);
+    expect(second.results[0].content).toMatch(/18/);
+    expect(documentCalls).toBe(1);
+
+    await searchNotes("what is kareem's age", copyNotes(), embed);
+    expect(documentCalls).toBe(2);
+  });
 });
