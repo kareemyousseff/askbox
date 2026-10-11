@@ -1,0 +1,9 @@
+Kareem grew up in Egypt and studies computer science. He builds small web apps by typing them himself, one feature at a time. The early apps were a task list, a notes site, and a household occupancy app. Each one taught a different piece of how a server stores data and answers a request.
+
+He plays baseball on weekends. Practice is in the afternoon, and the glove stays in the same bag as the laptop. Between practices he reads his course notes for Java and for the classes that start next term, including data structures. The course notes are long. A single sentence in a notes file is not long. A chapter is long, which is why a chapter cannot be one vector.
+
+Food shows up often in his notes. Cookies are the usual answer. Pasta is the other one. Those notes are short on purpose, so a search can embed each note whole and still find the right one. A page like this is the opposite. It keeps going after the fact you asked for, and the extra paragraphs would dilute one vector for the whole page.
+
+The capital is Cairo and he is 18. That sentence is the fact this page is here to test. It sits in the middle so a cut can land inside it. The words before it are about food. The words after it are about the city and his age, but the full fact needs both halves together.
+
+Cairo is crowded and hot in the summer. He takes the same roads to practice and to the lectures. Eighteen is old enough for the university courses he is in now, and young enough that the apps are still practice. A search that returns this whole page would hand the model every paragraph. A search that returns one piece should hand it the piece that still contains the capital and the age, even when the cut falls between those two words.
