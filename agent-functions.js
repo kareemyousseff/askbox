@@ -90,15 +90,25 @@ export async function searchDocs(query, files, embed) {
   return scored[0].file;
 }
 
+const pages = [
+  { title: "page", source: "page.txt", date: "2026-10-11" },
+  { title: "other", source: "other.txt", date: "2024-05-01" },
+];
+
 async function rowsForPage(embed) {
   const saved = savedPageRows.get(embed);
   if (saved) return saved;
-  const chunks = chunkText(fs.readFileSync("page.txt", "utf8"));
-  const vectors = await embed(chunks, "RETRIEVAL_DOCUMENT");
-  const rows = chunks.map((content, index) => ({
-    note: { title: "page", content },
-    vector: vectors[index],
-  }));
+  const rows = [];
+  for (const page of pages) {
+    const chunks = chunkText(fs.readFileSync(page.source, "utf8"));
+    const vectors = await embed(chunks, "RETRIEVAL_DOCUMENT");
+    chunks.forEach((content, index) => {
+      rows.push({
+        note: { title: page.title, content, source: page.source, date: page.date },
+        vector: vectors[index],
+      });
+    });
+  }
   savedPageRows.set(embed, rows);
   return rows;
 }
@@ -109,7 +119,9 @@ async function pageChunkOrMiss(question, embed) {
     message: "No note was close enough. Say I don't know.",
     results: [],
   };
-  const rows = await rowsForPage(embed);
+  const source = question.match(/\b[\w.-]+\.txt\b/)?.[0];
+  let rows = await rowsForPage(embed);
+  if (source) rows = rows.filter((row) => row.note.source === source);
   const [queryVector] = await embed([question], "RETRIEVAL_QUERY");
   const scored = rows.map((row) => ({
     note: row.note,

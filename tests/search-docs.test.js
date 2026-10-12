@@ -90,4 +90,19 @@ describe("searchDocs", () => {
     expect(hit.results.map((note) => note.content).join("\n")).not.toContain("Food shows up");
     expect(hit.results.every((note) => note.content.length < page.length)).toBe(true);
   });
+
+  it("drops the other page before scoring when the question names page.txt", async () => {
+    const store = { notes: [{ title: "Where I live", content: "I live in cairo" }] };
+    const hit = await searchNotes("capital in page.txt", store, async (texts, taskType) => {
+      if (taskType === "RETRIEVAL_QUERY") return [[1, 0]];
+      return texts.map((text) => (
+        text.includes("The capital is Cairo and he is 18.") ? [1, 0] : [0, 1]
+      ));
+    });
+    const contents = hit.results.map((note) => note.content).join("\n");
+    expect(hit.results.every((note) => note.source === "page.txt")).toBe(true);
+    expect(hit.results.every((note) => note.date === "2026-10-11")).toBe(true);
+    expect(contents).toContain("The capital is Cairo and he is 18.");
+    expect(contents).not.toContain("lantern");
+  });
 });

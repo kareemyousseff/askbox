@@ -1,0 +1,1 @@
+The capital is Cairo and he is 18. The same words are in this file on purpose. The marker for this file is lantern, so a search of page.txt must not return this chunk.
