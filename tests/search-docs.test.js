@@ -84,10 +84,11 @@ describe("searchDocs", () => {
         return [0, 1];
       });
     });
+    const contents = hit.results.map((note) => note.content).join("\n");
     expect(hit.success).toBe(true);
-    expect(hit.results.map((note) => note.content).join("\n")).toContain("The capital is Cairo and he is 18.");
-    expect(hit.results.map((note) => note.content).join("\n")).toContain("contains the capital and the age");
-    expect(hit.results.map((note) => note.content).join("\n")).not.toContain("Food shows up");
+    expect(contents).toContain("The capital is Cairo and he is 18.");
+    expect(contents).not.toContain("Food shows up");
+    expect(contents).not.toContain("contains the capital and the age");
     expect(hit.results.every((note) => note.content.length < page.length)).toBe(true);
   });
 
@@ -104,5 +105,21 @@ describe("searchDocs", () => {
     expect(hit.results.every((note) => note.date === "2026-10-11")).toBe(true);
     expect(contents).toContain("The capital is Cairo and he is 18.");
     expect(contents).not.toContain("lantern");
+  });
+
+  it("returns the lantern chunk when its vector is lower", async () => {
+    const store = { notes: [{ title: "Where I live", content: "I live in cairo" }] };
+    const hit = await searchNotes("lantern", store, async (texts, taskType) => {
+      if (taskType === "RETRIEVAL_QUERY") return [[1, 0]];
+      return texts.map((text) => {
+        const line = text.toLowerCase();
+        if (line.includes("i live in cairo")) return [0, 1];
+        if (line.includes("lantern")) return [0.2, 0];
+        return [0.9, 0];
+      });
+    });
+    expect(hit.success).toBe(true);
+    expect(hit.results.every((note) => note.source === "other.txt")).toBe(true);
+    expect(hit.results.some((note) => note.content.includes("lantern"))).toBe(true);
   });
 });

@@ -7,6 +7,32 @@ function dot(a, b) {
   return sum;
 }
 
+function terms(text) {
+  return String(text ?? "").toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
+}
+
+function bm25(query, text, docs) {
+  const queryTerms = [...new Set(terms(query))];
+  const docsTerms = docs.map((doc) => terms(doc));
+  const count = docsTerms.length;
+  if (queryTerms.length === 0 || count === 0) return 0;
+  const average = docsTerms.reduce((sum, row) => sum + row.length, 0) / count || 1;
+  const k1 = 1.2;
+  const b = 0.75;
+  const textTerms = terms(text);
+  const length = textTerms.length || 1;
+  let score = 0;
+  for (const term of queryTerms) {
+    const times = textTerms.filter((word) => word === term).length;
+    if (times === 0) continue;
+    const docsWithTerm = docsTerms.filter((row) => row.includes(term)).length;
+    const rarity = Math.log(1 + (count - docsWithTerm + 0.5) / (docsWithTerm + 0.5));
+    const denominator = times + k1 * (1 - b + b * length / average);
+    score += rarity * (times * (k1 + 1)) / denominator;
+  }
+  return score;
+}
+
 // Measured with gemini-embedding-001 on these notes (30 Sep 2026):
 // "what's my star sign" -> taurus 0.679, "where do I live" -> cairo 0.746,
 // "how old am I" -> age 0.653, "zzz" -> best note 0.628.
@@ -75,13 +101,11 @@ export async function addNote(title, content, store = notes) {
 }
 
 export async function searchDocs(query, files, embed) {
-  const words = String(query ?? "").toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
   const texts = files.map((file) => file.text);
   const [queryVector] = await embed([query], "RETRIEVAL_QUERY");
   const docVectors = await embed(texts, "RETRIEVAL_DOCUMENT");
   const scored = files.map((file, i) => {
-    const text = file.text.toLowerCase();
-    const keyword = words.filter((word) => text.includes(word)).length;
+    const keyword = bm25(query, file.text, texts);
     const vector = dot(queryVector, docVectors[i]);
     return { file, keyword, score: keyword + vector };
   });
@@ -123,9 +147,10 @@ async function pageChunkOrMiss(question, embed) {
   let rows = await rowsForPage(embed);
   if (source) rows = rows.filter((row) => row.note.source === source);
   const [queryVector] = await embed([question], "RETRIEVAL_QUERY");
+  const texts = rows.map((row) => row.note.content);
   const scored = rows.map((row) => ({
     note: row.note,
-    score: dot(queryVector, row.vector),
+    score: dot(queryVector, row.vector) + bm25(question, row.note.content, texts),
   }));
   const matched = matchedNotes(scored);
   if (matched.length === 0) return miss;
