@@ -11,6 +11,22 @@ function terms(text) {
   return String(text ?? "").toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
 }
 
+export function cite(reply, notes) {
+  const allowed = new Set(terms(notes.map((note) => note.content).join(" ")));
+  const sentences = String(reply).match(/[^.!?]+[.!?]?/g) ?? [];
+  const kept = sentences
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => {
+      const words = terms(sentence);
+      return words.length > 0 && words.every((word) => allowed.has(word));
+    });
+  const text = kept.join(" ");
+  if (!text) return "";
+  const sources = [...new Set(notes.map((note) => note.source).filter(Boolean))];
+  if (sources.length === 0) return text;
+  return text + " (" + sources.join(", ") + ")";
+}
+
 function bm25(query, text, docs) {
   const queryTerms = [...new Set(terms(query))];
   const docsTerms = docs.map((doc) => terms(doc));

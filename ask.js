@@ -1,5 +1,6 @@
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import { connectNotes } from "./notes-mcp.js";
+import { cite } from "./agent-functions.js";
 import { plan } from "./plan.js";
 
 const GraphState = Annotation.Root({
@@ -113,7 +114,9 @@ export async function askGemini(message, generateContent, store, embed, rerank) 
     if (!reply) {
       throw new Error("Gemini returned no text");
     }
-    return { reply };
+    if (state.matchedNotes.length === 0) return { reply };
+    const cited = cite(reply, state.matchedNotes);
+    return { reply: cited || "I don't know" };
   }
 
   const app = new StateGraph(GraphState)

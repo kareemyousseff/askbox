@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
-import { answerFromDocs, chunkText, searchDocs, searchNotes, searchPage } from "../agent-functions.js";
+import { answerFromDocs, chunkText, cite, searchDocs, searchNotes, searchPage } from "../agent-functions.js";
 
 function fakeEmbed(texts, taskType) {
   return texts.map((text) => {
@@ -145,5 +145,11 @@ describe("searchDocs", () => {
     expect(scoreOrder[0].includes("lantern")).toBe(false);
     expect(scoreOrder.some((content) => content.includes("lantern"))).toBe(true);
     expect(hit.results[0].content.includes("lantern")).toBe(true);
+  });
+
+  it("drops a sentence whose word is missing from the chunk", () => {
+    const notes = [{ content: "The capital is Cairo and he is 18.", source: "page.txt" }];
+    const reply = cite("Cairo is the capital. He owns a boat.", notes);
+    expect(reply).toBe("Cairo is the capital. (page.txt)");
   });
 });
