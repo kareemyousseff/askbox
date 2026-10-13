@@ -53,6 +53,31 @@ app.post("/ask", async (req, res) => {
       });
       track("gemini-embedding-001", response);
       return response.embeddings.map((item) => item.values);
+    }, async (question, found) => {
+      const list = found.map((note, index) => index + ". " + note.content).join("\n\n");
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash-lite",
+        contents: [{
+          role: "user",
+          parts: [{
+            text:
+              "Order these passages for the question. Reply with a JSON array of indexes, best first.\nQuestion: " +
+              question +
+              "\n" +
+              list,
+          }],
+        }],
+      });
+      track("gemini-3.5-flash-lite", response);
+      const text = String(response?.text ?? "").trim().replace(/^```json\s*|\s*```$/g, "");
+      try {
+        const indexes = JSON.parse(text);
+        const ordered = indexes.map((index) => found[index]).filter(Boolean);
+        if (ordered.length === found.length) return ordered;
+      } catch {
+        return found;
+      }
+      return found;
     });
     const rubric = [
       "Searches: " + (searches?.length ? searches.join(", ") : "none"),

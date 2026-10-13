@@ -32,7 +32,7 @@ function stepLabel(step, patch) {
   return step;
 }
 
-export async function askGemini(message, generateContent, store, embed) {
+export async function askGemini(message, generateContent, store, embed, rerank) {
   const messages = message.map((turn) => turn.content);
   if (!messages.some((line) => String(line ?? "").trim())) {
     throw new Error("Message is required");
@@ -43,7 +43,7 @@ export async function askGemini(message, generateContent, store, embed) {
   let notesClient;
 
   async function callSearch(query) {
-    if (!notesClient) notesClient = await connectNotes(store, embed);
+    if (!notesClient) notesClient = await connectNotes(store, embed, rerank);
     const response = await notesClient.callTool({
       name: "searchNotes",
       arguments: { query },

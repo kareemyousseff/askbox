@@ -122,4 +122,28 @@ describe("searchDocs", () => {
     expect(hit.results.every((note) => note.source === "other.txt")).toBe(true);
     expect(hit.results.some((note) => note.content.includes("lantern"))).toBe(true);
   });
+
+  it("reranks a second-place chunk to first", async () => {
+    const store = { notes: [{ title: "Where I live", content: "I live in cairo" }] };
+    let scoreOrder = [];
+    const hit = await searchNotes("capital", store, async (texts, taskType) => {
+      if (taskType === "RETRIEVAL_QUERY") return [[1, 0]];
+      return texts.map((text) => {
+        const line = text.toLowerCase();
+        if (line.includes("i live in cairo")) return [0, 1];
+        if (line.includes("lantern")) return [0.8, 0];
+        if (line.includes("the capital is cairo and he is 18.")) return [3, 0];
+        return [0, 1];
+      });
+    }, async (question, found) => {
+      scoreOrder = found.map((note) => note.content);
+      return [
+        ...found.filter((note) => note.content.includes("lantern")),
+        ...found.filter((note) => !note.content.includes("lantern")),
+      ];
+    });
+    expect(scoreOrder[0].includes("lantern")).toBe(false);
+    expect(scoreOrder.some((content) => content.includes("lantern"))).toBe(true);
+    expect(hit.results[0].content.includes("lantern")).toBe(true);
+  });
 });

@@ -8,7 +8,7 @@ import { z } from "zod";
 import notes from "./notes.json" with { type: "json" };
 import { searchNotes } from "./agent-functions.js";
 
-export function createNotesServer(store, embed) {
+export function createNotesServer(store, embed, rerank) {
   const server = new McpServer({ name: "notes", version: "0.1.0" });
   server.registerTool(
     "searchNotes",
@@ -17,15 +17,15 @@ export function createNotesServer(store, embed) {
       inputSchema: { query: z.string() },
     },
     async ({ query }) => {
-      const result = await searchNotes(query, store, embed);
+      const result = await searchNotes(query, store, embed, rerank);
       return { content: [{ type: "text", text: JSON.stringify(result) }] };
     },
   );
   return server;
 }
 
-export async function connectNotes(store, embed) {
-  const server = createNotesServer(store, embed);
+export async function connectNotes(store, embed, rerank) {
+  const server = createNotesServer(store, embed, rerank);
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);
   const client = new Client({ name: "ask-box", version: "0.1.0" });

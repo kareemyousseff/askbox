@@ -59,7 +59,7 @@ async function rowsFor(store, embed) {
   return rows;
 }
 
-export async function searchNotes(query, store = notes, embed) {
+export async function searchNotes(query, store = notes, embed, rerank) {
   const question = String(query ?? "").trim();
   if (!question) {
     return { success: false, message: "No words found" };
@@ -80,7 +80,7 @@ export async function searchNotes(query, store = notes, embed) {
   scored.sort((a, b) => b.score - a.score);
   const matched = matchedNotes(scored);
   if (matched.length === 0) {
-    return pageChunkOrMiss(question, embed);
+    return pageChunkOrMiss(question, embed, rerank);
   }
   return {
     success: true,
@@ -137,7 +137,7 @@ async function rowsForPage(embed) {
   return rows;
 }
 
-async function pageChunkOrMiss(question, embed) {
+async function pageChunkOrMiss(question, embed, rerank) {
   const miss = {
     success: false,
     message: "No note was close enough. Say I don't know.",
@@ -152,12 +152,27 @@ async function pageChunkOrMiss(question, embed) {
     note: row.note,
     score: dot(queryVector, row.vector) + bm25(question, row.note.content, texts),
   }));
-  const matched = matchedNotes(scored);
-  if (matched.length === 0) return miss;
+  scored.sort((a, b) => b.score - a.score);
+  if (!rerank) {
+    const matched = matchedNotes(scored);
+    if (matched.length === 0) return miss;
+    return {
+      success: true,
+      message: "Found matching notes. Use every note in results. Do not answer from only the first one.",
+      results: matched.map((row) => row.note),
+    };
+  }
+  const top = scored.filter((row) => row.score >= MIN_SCORE).slice(0, 3);
+  if (top.length === 0) return miss;
+  const notesInScoreOrder = top.map((row) => row.note);
+  const ordered = await rerank(question, notesInScoreOrder);
+  const results = Array.isArray(ordered) && ordered.length === notesInScoreOrder.length
+    ? ordered
+    : notesInScoreOrder;
   return {
     success: true,
     message: "Found matching notes. Use every note in results. Do not answer from only the first one.",
-    results: matched.map((row) => row.note),
+    results,
   };
 }
 
