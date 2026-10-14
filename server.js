@@ -90,7 +90,7 @@ app.post("/ask", async (req, res) => {
           role: "user",
           parts: [{
             text:
-              "Rewrite this search as a short factual phrase. Reply with the phrase only.\nQuestion: " +
+              " Rewrite this search as a short clear search. Do not answer it. Reply with the search only.\nQuestion: " +
               question +
               "\nSearch: " +
               query,
