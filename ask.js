@@ -41,7 +41,12 @@ function stepLabel(step, patch) {
     const verdict = patch.trace?.find((row) => row.check)?.check;
     return verdict ? `check: ${verdict}` : "check";
   }
+  if (step === "answer" && patch.trace?.some((row) => row.blocked)) return "answer: blocked";
   return step;
+}
+
+function poisoned(notes) {
+  return notes.some((note) => /ignore your instructions/i.test(String(note?.content ?? "")));
 }
 
 export async function askGemini(message, generateContent, store, embed, rerank, rewrite, check) {
@@ -128,6 +133,13 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
   }
 
   async function answer(state) {
+    if (poisoned(state.matchedNotes)) {
+      return {
+        reply: "I don't know",
+        matchedNotes: [],
+        trace: (state.trace ?? []).map((row) => ({ ...row, blocked: true })),
+      };
+    }
     const turns = [...recentTurns];
     if (state.matchedNotes.length > 0) {
       turns.push({
