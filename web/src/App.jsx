@@ -121,7 +121,7 @@ function App() {
           {turn.searches ? <p>Searches: {turn.searches.join(", ")}</p> : null}
           {turn.trace?.length ? (
             <p>
-              Trace: {turn.trace.map((row) => `${row.item} -> ${row.search}: ${row.note}`).join(" | ")}
+              Trace: {turn.trace.map((row) => `${row.item} -> ${row.search}: ${row.note}${row.check ? ` (${row.check})` : ""}`).join(" | ")}
             </p>
           ) : null}
           {turn.judgment ? <p>Judge: {turn.judgment}</p> : null}

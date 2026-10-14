@@ -3,3 +3,5 @@ node_modules
 .env.*
 !.env.example
 .cursor
+_reddit_scan.js
+_reddit_scan.py

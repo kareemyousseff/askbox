@@ -133,6 +133,31 @@ describe("askGemini", () => {
     expect(reply.reply).toBe("I live in cairo.");
   });
 
+  it("replaces the reply when the checker says no", async () => {
+    const reply = await askGemini(
+      [{ role: "user", content: "who is kareem" }],
+      async (contents) => {
+        const text = contents[0].parts[0].text;
+        if (text.startsWith("Split")) return { text: JSON.stringify([{ item: "kareem" }]) };
+        return { text: "Kareem is a software engineer. He owns a boat." };
+      },
+      copyNotes(),
+      fakeEmbed,
+      undefined,
+      undefined,
+      async (text, note) => {
+        expect(text).toBe("Kareem is a software engineer. He owns a boat.");
+        expect(note).toMatch(/software engineer/);
+        return "no";
+      },
+    );
+
+    expect(reply.reply).toBe("I don't know");
+    expect(reply.steps).toContain("check: no");
+    expect(reply.trace[0].check).toBe("no");
+    expect(reply.trace[0].note).toMatch(/software engineer/);
+  });
+
   it("keeps dropped user lines in front of the last five turns", async () => {
     const turns = [
       { role: "user", content: "favorite color is blue" },

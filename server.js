@@ -101,6 +101,24 @@ app.post("/ask", async (req, res) => {
       track("gemini-3.5-flash-lite", response);
       const text = String(response?.text ?? "").trim();
       return text || query;
+    }, async (reply, note) => {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash-lite",
+        contents: [{
+          role: "user",
+          parts: [{
+            text:
+              "Does this reply state only facts that are in the note? A reply with no facts is yes. Reply yes or no.\nNote: " +
+              note +
+              "\nReply: " +
+              reply,
+          }],
+        }],
+        config: { temperature: 0 },
+      });
+      track("gemini-3.5-flash-lite", response);
+      const text = String(response?.text ?? "").trim().toLowerCase();
+      return text.startsWith("yes") ? "yes" : "no";
     });
     const rubric = [
       "Searches: " + (searches?.length ? searches.join(", ") : "none"),

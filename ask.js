@@ -37,10 +37,14 @@ function stepLabel(step, patch) {
     }
     return `search: ${patch.previousItem}`;
   }
+  if (step === "check") {
+    const verdict = patch.trace?.find((row) => row.check)?.check;
+    return verdict ? `check: ${verdict}` : "check";
+  }
   return step;
 }
 
-export async function askGemini(message, generateContent, store, embed, rerank, rewrite) {
+export async function askGemini(message, generateContent, store, embed, rerank, rewrite, check) {
   const messages = message.map((turn) => turn.content);
   if (!messages.some((line) => String(line ?? "").trim())) {
     throw new Error("Message is required");
@@ -136,9 +140,20 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     if (!reply) {
       throw new Error("Gemini returned no text");
     }
-    if (state.matchedNotes.length === 0) return { reply };
+    if (state.matchedNotes.length === 0 || check) return { reply };
     const cited = cite(reply, state.matchedNotes);
     return { reply: cited || "I don't know" };
+  }
+
+  async function checkStep(state) {
+    const note = state.matchedNotes.map((row) => row.content).join("\n");
+    const verdict = String(await check(state.reply, note) ?? "").trim().toLowerCase();
+    const approved = verdict === "yes";
+    const cited = approved ? cite(state.reply, state.matchedNotes) : "";
+    return {
+      reply: approved ? cited : "I don't know",
+      trace: (state.trace ?? []).map((row) => ({ ...row, check: approved ? "yes" : "no" })),
+    };
   }
 
   const app = new StateGraph(GraphState)
@@ -146,11 +161,13 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     .addNode("search", search)
     .addNode("giveUp", giveUp)
     .addNode("answer", answer)
+    .addNode("check", checkStep)
     .addEdge(START, "plan")
     .addConditionalEdges("plan", nextStep)
     .addConditionalEdges("search", nextStep)
     .addEdge("giveUp", END)
-    .addEdge("answer", END)
+    .addConditionalEdges("answer", (state) => (check && state.matchedNotes.length > 0 ? "check" : END))
+    .addEdge("check", END)
     .compile();
 
   const startState = {
