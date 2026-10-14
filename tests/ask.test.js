@@ -100,6 +100,36 @@ describe("askGemini", () => {
     expect(step).toBe(1);
   });
 
+  it("searches the rewritten query when the vague one misses", async () => {
+    const store = copyNotes();
+    async function embed(texts, taskType) {
+      const line = String(texts[0] ?? "").toLowerCase();
+      if (taskType === "RETRIEVAL_QUERY") {
+        return [line.includes("cairo") ? [1, 0] : [0, 1]];
+      }
+      return texts.map((text) => text.toLowerCase().includes("cairo") ? [1, 0] : [0, 0]);
+    }
+
+    const miss = await searchNotes("where he is from", store, embed);
+    expect(miss.success).toBe(false);
+
+    const reply = await askGemini(
+      [{ role: "user", content: "where is he from" }],
+      async (contents) => {
+        const text = contents[0].parts[0].text;
+        if (text.startsWith("Split")) return { text: JSON.stringify([{ item: "where he is from" }]) };
+        return { text: "I live in cairo." };
+      },
+      store,
+      embed,
+      undefined,
+      async () => "cairo",
+    );
+
+    expect(reply.steps).toContain("search: where he is from -> cairo");
+    expect(reply.reply).toBe("I live in cairo.");
+  });
+
   it("keeps dropped user lines in front of the last five turns", async () => {
     const turns = [
       { role: "user", content: "favorite color is blue" },

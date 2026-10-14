@@ -7,6 +7,7 @@ const GraphState = Annotation.Root({
   checklist: Annotation(),
   searchCount: Annotation(),
   previousItem: Annotation(),
+  rewritten: Annotation(),
   searches: Annotation(),
   calls: Annotation(),
   matchedNotes: Annotation(),
@@ -29,11 +30,16 @@ function stepLabel(step, patch) {
     const items = (patch.checklist ?? []).map((row) => row.item).filter(Boolean);
     return items.length ? `plan: ${items.join(", ")}` : "plan";
   }
-  if (step === "search") return `search: ${patch.previousItem}`;
+  if (step === "search") {
+    if (patch.rewritten && patch.rewritten !== patch.previousItem) {
+      return `search: ${patch.previousItem} -> ${patch.rewritten}`;
+    }
+    return `search: ${patch.previousItem}`;
+  }
   return step;
 }
 
-export async function askGemini(message, generateContent, store, embed, rerank) {
+export async function askGemini(message, generateContent, store, embed, rerank, rewrite) {
   const messages = message.map((turn) => turn.content);
   if (!messages.some((line) => String(line ?? "").trim())) {
     throw new Error("Message is required");
@@ -66,9 +72,14 @@ export async function askGemini(message, generateContent, store, embed, rerank) 
     const current = state.checklist.find((entry) => entry.done === false);
     const checklist = state.checklist.map((entry) => ({ ...entry }));
     const matchedNotes = [...state.matchedNotes];
+    let query = current.item;
+    if (rewrite) {
+      const next = String(await rewrite(question, current.item) ?? "").trim();
+      if (next) query = next;
+    }
     let searchResult;
     try {
-      searchResult = await callSearch(current.item);
+      searchResult = await callSearch(query);
     } catch (error) {
       searchResult = { success: false, message: error.message };
     }
@@ -79,6 +90,7 @@ export async function askGemini(message, generateContent, store, embed, rerank) 
     return {
       searchCount,
       previousItem: current.item,
+      rewritten: query,
       searches: [...state.searches, current.item],
       calls: [...state.calls, "searchNotes"],
       checklist,
@@ -135,6 +147,7 @@ export async function askGemini(message, generateContent, store, embed, rerank) 
     checklist: [],
     searchCount: 0,
     previousItem: null,
+    rewritten: "",
     searches: [],
     calls: [],
     matchedNotes: [],

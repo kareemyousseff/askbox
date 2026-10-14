@@ -83,6 +83,24 @@ app.post("/ask", async (req, res) => {
         return found;
       }
       return found;
+    }, async (question, query) => {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash-lite",
+        contents: [{
+          role: "user",
+          parts: [{
+            text:
+              "Rewrite this search as a short factual phrase. Reply with the phrase only.\nQuestion: " +
+              question +
+              "\nSearch: " +
+              query,
+          }],
+        }],
+        config: { temperature: 0 },
+      });
+      track("gemini-3.5-flash-lite", response);
+      const text = String(response?.text ?? "").trim();
+      return text || query;
     });
     const rubric = [
       "Searches: " + (searches?.length ? searches.join(", ") : "none"),
