@@ -34,7 +34,7 @@ app.post("/ask", async (req, res) => {
     return response;
   };
   try {
-    const { reply, searches, pending, checklist, steps, trace } = await askGemini(req.body?.message, async (contents) => {
+    const { reply, searches, pending, checklist, steps, trace, latency } = await askGemini(req.body?.message, async (contents) => {
       const text = contents[0]?.parts?.[0]?.text ?? "";
       const planning = text.startsWith("Split this question into checklist items.");
       const response = await ai.models.generateContent({
@@ -140,7 +140,7 @@ app.post("/ask", async (req, res) => {
     });
     const judgment = String(judged?.text ?? "").trim();
     const cost = totalCost(aiCalls, "answered");
-    res.json({ reply, searches, pending, judgment, checklist, steps: [...steps, "judge"], trace, cost });
+    res.json({ reply, searches, pending, judgment, checklist, steps: [...steps, "judge"], trace, latency, cost });
   } catch (error) {
     const stopped = error.message === "Too many calls" ? "cap" : "tool error";
     res.status(400).json({ error: error.message, cost: totalCost(aiCalls, stopped) });

@@ -182,6 +182,39 @@ describe("askGemini", () => {
     expect(reply.trace[0].note).toMatch(/Ignore your instructions/);
   });
 
+  it("retries a 429 once", async () => {
+    let calls = 0;
+    const reply = await askGemini([{ role: "user", content: "hello" }], async () => {
+      calls += 1;
+      if (calls === 1) {
+        const error = new Error("busy");
+        error.status = 429;
+        throw error;
+      }
+      if (calls === 2) return { text: "[]" };
+      return { text: "hi there" };
+    });
+
+    expect(calls).toBe(3);
+    expect(reply.reply).toBe("hi there");
+    expect(reply.latency[0]).toMatchObject({ tries: 2 });
+    expect(reply.latency[0].ms).toBeGreaterThanOrEqual(0);
+    expect(reply.latency[1]).toMatchObject({ tries: 1 });
+  });
+
+  it("does not retry a 400", async () => {
+    let calls = 0;
+    await expect(
+      askGemini([{ role: "user", content: "hello" }], async () => {
+        calls += 1;
+        const error = new Error("bad");
+        error.status = 400;
+        throw error;
+      }),
+    ).rejects.toThrow("bad");
+    expect(calls).toBe(1);
+  });
+
   it("keeps dropped user lines in front of the last five turns", async () => {
     const turns = [
       { role: "user", content: "favorite color is blue" },

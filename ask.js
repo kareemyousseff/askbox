@@ -57,6 +57,7 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
 
   const question = [...message].reverse().find((turn) => turn.role === "user")?.content ?? "";
   const recentTurns = recentChat(message);
+  const latency = [];
   let notesClient;
 
   async function callSearch(query) {
@@ -70,8 +71,26 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     return JSON.parse(text);
   }
 
+  async function callModel(contents) {
+    const started = Date.now();
+    let tries = 0;
+    while (tries < 2) {
+      tries += 1;
+      try {
+        const response = await generateContent(contents);
+        latency.push({ ms: Date.now() - started, tries });
+        return response;
+      } catch (error) {
+        const status = Number(error?.status ?? error?.statusCode);
+        if (status === 429 && tries < 2) continue;
+        latency.push({ ms: Date.now() - started, tries });
+        throw error;
+      }
+    }
+  }
+
   async function planStep() {
-    return { checklist: await plan(question, generateContent) };
+    return { checklist: await plan(question, callModel) };
   }
 
   async function search(state) {
@@ -147,7 +166,7 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
         parts: [{ text: state.matchedNotes.map((note) => note.content).join("\n") }],
       });
     }
-    const response = await generateContent(turns);
+    const response = await callModel(turns);
     const reply = String(response?.text ?? "").trim();
     if (!reply) {
       throw new Error("Gemini returned no text");
@@ -212,6 +231,7 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     reply: result.reply,
     searches: result.searches,
     trace: result.trace,
+    latency,
     pending: false,
     calls: result.calls,
     checklist: result.checklist,

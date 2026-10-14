@@ -77,6 +77,7 @@ function App() {
             checklist: data.checklist || [],
             steps: data.steps || [],
             trace: data.trace || [],
+            latency: data.latency || [],
             cost: data.cost || null,
           },
         ];
@@ -122,6 +123,11 @@ function App() {
           {turn.trace?.length ? (
             <p>
               Trace: {turn.trace.map((row) => `${row.item} -> ${row.search}: ${row.note}${row.blocked ? " blocked" : ""}${row.check ? ` (${row.check})` : ""}`).join(" | ")}
+            </p>
+          ) : null}
+          {turn.latency?.length ? (
+            <p>
+              Trace: {turn.latency.map((row) => `${row.tries} ${row.tries === 1 ? "try" : "tries"}, ${row.ms}ms`).join(" | ")}
             </p>
           ) : null}
           {turn.judgment ? <p>Judge: {turn.judgment}</p> : null}
