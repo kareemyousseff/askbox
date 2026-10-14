@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { plan } from "../plan.js";
+import { plan, readChecklist } from "../plan.js";
 
 describe("plan", () => {
   it("asks the model for the items and starts each one undone", async () => {
@@ -18,5 +18,10 @@ describe("plan", () => {
       { item: "age", done: false },
       { item: "city", done: false },
     ]);
+  });
+
+  it("rejects a checklist that does not match the schema", () => {
+    expect(readChecklist('[{"item":"age"}]')).toEqual([{ item: "age", done: false }]);
+    expect(() => readChecklist('[{"done":false}]')).toThrow(/schema/);
   });
 });

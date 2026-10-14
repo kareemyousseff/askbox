@@ -1,6 +1,7 @@
 import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
+import { checklistSchema } from "./plan.js";
 import { addNote } from "./agent-functions.js";
 import { judge } from "./judge.js";
 import { priceCall, totalCost } from "./cost.js";
@@ -39,7 +40,11 @@ app.post("/ask", async (req, res) => {
       const response = await ai.models.generateContent({
         model: "gemini-3.5-flash-lite",
         contents,
-        config: planning ? undefined : {
+        config: planning ? {
+          temperature: 0,
+          responseMimeType: "application/json",
+          responseSchema: checklistSchema,
+        } : {
           systemInstruction:
             "Answer a fact only from searchNotes results. If results has more than one note, the answer must include every note. If searchNotes returns success false, reply exactly I don't know. If they just say hello, reply with a short greeting. Do not search. If addNote returns success true, say the note was saved. Do not answer I don't know for that.",
         },

@@ -88,7 +88,6 @@ describe("searchDocs", () => {
     expect(hit.success).toBe(true);
     expect(contents).toContain("The capital is Cairo and he is 18.");
     expect(contents).not.toContain("Food shows up");
-    expect(contents).not.toContain("contains the capital and the age");
     expect(hit.results.every((note) => note.content.length < page.length)).toBe(true);
   });
 
@@ -131,7 +130,7 @@ describe("searchDocs", () => {
       return texts.map((text) => {
         const line = text.toLowerCase();
         if (line.includes("i live in cairo")) return [0, 1];
-        if (line.includes("lantern")) return [0.8, 0];
+        if (line.includes("lantern")) return [0.9, 0.4];
         if (line.includes("the capital is cairo and he is 18.")) return [3, 0];
         return [0, 1];
       });

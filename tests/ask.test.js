@@ -178,9 +178,9 @@ describe("searchNotes", () => {
       return texts.map((text) => {
         const line = text.toLowerCase();
         if (line.includes("food")) return [1, 0, 0];
-        if (line.includes("cookies")) return [0.9, 0, 0];
-        if (line.includes("pasta")) return [0.86, 0, 0];
-        if (line.includes("weak")) return [0.7, 0, 0];
+        if (line.includes("cookies")) return [0.9, 0.05, 0];
+        if (line.includes("pasta")) return [0.86, 0.15, 0];
+        if (line.includes("weak")) return [0.7, 0.7, 0];
         return [0, 1, 0];
       });
     }

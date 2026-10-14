@@ -7,6 +7,12 @@ function dot(a, b) {
   return sum;
 }
 
+function cosine(a, b) {
+  const size = Math.sqrt(dot(a, a) * dot(b, b));
+  if (!size) return 0;
+  return dot(a, b) / size;
+}
+
 function terms(text) {
   return String(text ?? "").toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
 }
@@ -88,7 +94,7 @@ export async function searchNotes(query, store = notes, embed, rerank) {
   const [queryVector] = await embed([question], "RETRIEVAL_QUERY");
   const scored = rows.map((row) => ({
     note: row.note,
-    score: dot(queryVector, row.vector),
+    score: cosine(queryVector, row.vector),
   }));
   console.log(
     scored.map((row) => ({ title: row.note.title, score: row.score })),
@@ -122,7 +128,7 @@ export async function searchDocs(query, files, embed) {
   const docVectors = await embed(texts, "RETRIEVAL_DOCUMENT");
   const scored = files.map((file, i) => {
     const keyword = bm25(query, file.text, texts);
-    const vector = dot(queryVector, docVectors[i]);
+    const vector = cosine(queryVector, docVectors[i]);
     return { file, keyword, score: keyword + vector };
   });
   scored.sort((a, b) => b.score - a.score);
@@ -166,7 +172,7 @@ async function pageChunkOrMiss(question, embed, rerank) {
   const texts = rows.map((row) => row.note.content);
   const scored = rows.map((row) => ({
     note: row.note,
-    score: dot(queryVector, row.vector) + bm25(question, row.note.content, texts),
+    score: cosine(queryVector, row.vector) + bm25(question, row.note.content, texts),
   }));
   scored.sort((a, b) => b.score - a.score);
   if (!rerank) {

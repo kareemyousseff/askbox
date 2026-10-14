@@ -1,3 +1,25 @@
+import { Type } from "@google/genai";
+
+export const checklistSchema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      item: { type: Type.STRING },
+    },
+    required: ["item"],
+  },
+};
+
+export function readChecklist(text) {
+  const cleaned = String(text ?? "").trim().replace(/^```json\s*|\s*```$/g, "");
+  const rows = JSON.parse(cleaned);
+  if (!Array.isArray(rows) || rows.some((row) => typeof row?.item !== "string" || row.item.trim() === "")) {
+    throw new Error("Checklist did not match the schema");
+  }
+  return rows.map((row) => ({ item: row.item, done: false }));
+}
+
 export async function plan(question, generateContent) {
   const response = await generateContent([
     {
@@ -11,9 +33,5 @@ export async function plan(question, generateContent) {
       ],
     },
   ]);
-  const text = String(response?.text ?? "")
-    .trim()
-    .replace(/^```json\s*|\s*```$/g, "");
-  const rows = JSON.parse(text);
-  return rows.map((row) => ({ item: String(row.item), done: false }));
+  return readChecklist(response?.text);
 }
