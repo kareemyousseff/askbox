@@ -76,6 +76,7 @@ function App() {
             judgment: data.judgment || "",
             checklist: data.checklist || [],
             steps: data.steps || [],
+            trace: data.trace || [],
             cost: data.cost || null,
           },
         ];
@@ -118,6 +119,11 @@ function App() {
             <p>Plan: {turn.checklist.map((row) => row.item).join(", ")}</p>
           ) : null}
           {turn.searches ? <p>Searches: {turn.searches.join(", ")}</p> : null}
+          {turn.trace?.length ? (
+            <p>
+              Trace: {turn.trace.map((row) => `${row.item} -> ${row.search}: ${row.note}`).join(" | ")}
+            </p>
+          ) : null}
           {turn.judgment ? <p>Judge: {turn.judgment}</p> : null}
           {turn.cost ? (
             <p>

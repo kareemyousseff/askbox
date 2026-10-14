@@ -9,6 +9,7 @@ const GraphState = Annotation.Root({
   previousItem: Annotation(),
   rewritten: Annotation(),
   searches: Annotation(),
+  trace: Annotation(),
   calls: Annotation(),
   matchedNotes: Annotation(),
   reply: Annotation(),
@@ -83,15 +84,24 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     } catch (error) {
       searchResult = { success: false, message: error.message };
     }
-    if (searchResult?.success && Array.isArray(searchResult.results) && searchResult.results.length > 0) {
+    const found = searchResult?.success && Array.isArray(searchResult.results) ? searchResult.results : [];
+    if (found.length > 0) {
       checklist.find((entry) => entry.done === false).done = true;
-      matchedNotes.push(...searchResult.results);
+      matchedNotes.push(...found);
     }
     return {
       searchCount,
       previousItem: current.item,
       rewritten: query,
       searches: [...state.searches, current.item],
+      trace: [
+        ...(state.trace ?? []),
+        {
+          item: current.item,
+          search: query,
+          note: found.map((row) => row.content).filter(Boolean).join("\n"),
+        },
+      ],
       calls: [...state.calls, "searchNotes"],
       checklist,
       matchedNotes,
@@ -149,6 +159,7 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     previousItem: null,
     rewritten: "",
     searches: [],
+    trace: [],
     calls: [],
     matchedNotes: [],
     reply: "",
@@ -171,6 +182,7 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
   return {
     reply: result.reply,
     searches: result.searches,
+    trace: result.trace,
     pending: false,
     calls: result.calls,
     checklist: result.checklist,

@@ -127,6 +127,9 @@ describe("askGemini", () => {
     );
 
     expect(reply.steps).toContain("search: where he is from -> cairo");
+    expect(reply.trace).toEqual([
+      { item: "where he is from", search: "cairo", note: "I live in cairo" },
+    ]);
     expect(reply.reply).toBe("I live in cairo.");
   });
 
