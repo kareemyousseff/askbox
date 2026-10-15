@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import notes from "../notes.json" with { type: "json" };
 import { askGemini } from "../ask.js";
 import { searchNotes } from "../agent-functions.js";
@@ -32,6 +33,25 @@ describe("askGemini", () => {
     });
 
     expect(reply.reply).toBe("hi there");
+    expect(reply.pending).toBeNull();
+  });
+
+  it("holds a remembered fact until approval", async () => {
+    const before = readFileSync("notes.json", "utf8");
+    let calls = 0;
+    const reply = await askGemini(
+      [{ role: "user", content: "remember that I live in cairo" }],
+      async () => {
+        calls += 1;
+        throw new Error("model should not run");
+      },
+    );
+
+    expect(readFileSync("notes.json", "utf8")).toBe(before);
+    expect(calls).toBe(0);
+    expect(reply.pending).toEqual({ title: "I live in cairo", content: "I live in cairo" });
+    expect(reply.reply).toBe("Waiting for approval");
+    expect(reply.steps).toEqual(["remember: I live in cairo"]);
   });
 
   it("rejects a blank message", async () => {

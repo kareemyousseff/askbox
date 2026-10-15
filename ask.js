@@ -13,6 +13,7 @@ const GraphState = Annotation.Root({
   calls: Annotation(),
   matchedNotes: Annotation(),
   reply: Annotation(),
+  pending: Annotation(),
 });
 
 function recentChat(message) {
@@ -42,6 +43,7 @@ function stepLabel(step, patch) {
     return verdict ? `check: ${verdict}` : "check";
   }
   if (step === "answer" && patch.trace?.some((row) => row.blocked)) return "answer: blocked";
+  if (step === "remember") return `remember: ${patch.pending?.content ?? ""}`;
   return step;
 }
 
@@ -187,13 +189,23 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     };
   }
 
+  async function remember() {
+    const content = question.replace(/^remember that\s+/i, "").trim().replace(/[.!?]+$/, "");
+    return {
+      pending: { title: content, content },
+      reply: "Waiting for approval",
+    };
+  }
+
   const app = new StateGraph(GraphState)
     .addNode("plan", planStep)
     .addNode("search", search)
     .addNode("giveUp", giveUp)
     .addNode("answer", answer)
     .addNode("check", checkStep)
-    .addEdge(START, "plan")
+    .addNode("remember", remember)
+    .addConditionalEdges(START, () => (/^remember that\s+\S/i.test(question) ? "remember" : "plan"))
+    .addEdge("remember", END)
     .addConditionalEdges("plan", nextStep)
     .addConditionalEdges("search", nextStep)
     .addEdge("giveUp", END)
@@ -211,6 +223,7 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     calls: [],
     matchedNotes: [],
     reply: "",
+    pending: null,
   };
   const result = { ...startState };
   const steps = [];
@@ -232,7 +245,7 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     searches: result.searches,
     trace: result.trace,
     latency,
-    pending: false,
+    pending: result.pending,
     calls: result.calls,
     checklist: result.checklist,
     steps,
