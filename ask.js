@@ -47,11 +47,7 @@ function stepLabel(step, patch) {
   return step;
 }
 
-function poisoned(notes) {
-  return notes.some((note) => /ignore your instructions/i.test(String(note?.content ?? "")));
-}
-
-export async function askGemini(message, generateContent, store, embed, rerank, rewrite, check) {
+export async function askGemini(message, generateContent, store, embed, rerank, rewrite, check, guard) {
   const messages = message.map((turn) => turn.content);
   if (!messages.some((line) => String(line ?? "").trim())) {
     throw new Error("Message is required");
@@ -163,12 +159,16 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
   }
 
   async function answer(state) {
-    if (poisoned(state.matchedNotes)) {
-      return {
-        reply: "I don't know",
-        matchedNotes: [],
-        trace: (state.trace ?? []).map((row) => ({ ...row, blocked: true })),
-      };
+    if (state.matchedNotes.length > 0 && guard) {
+      const note = state.matchedNotes.map((row) => row.content).join("\n");
+      const verdict = String(await guard(note) ?? "").trim().toLowerCase();
+      if (verdict === "block") {
+        return {
+          reply: "I don't know",
+          matchedNotes: [],
+          trace: (state.trace ?? []).map((row) => ({ ...row, blocked: true })),
+        };
+      }
     }
     const turns = [...recentTurns];
     if (state.matchedNotes.length > 0) {
