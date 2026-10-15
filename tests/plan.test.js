@@ -22,6 +22,7 @@ describe("plan", () => {
 
   it("rejects a checklist that does not match the schema", () => {
     expect(readChecklist('[{"item":"age"}]')).toEqual([{ item: "age", done: false }]);
+    expect(readChecklist('[{"save":"I live in cairo"}]')).toEqual({ save: "I live in cairo" });
     expect(() => readChecklist('[{"done":false}]')).toThrow(/schema/);
   });
 });

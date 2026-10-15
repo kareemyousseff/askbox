@@ -36,22 +36,34 @@ describe("askGemini", () => {
     expect(reply.pending).toBeNull();
   });
 
-  it("holds a remembered fact until approval", async () => {
+  it("holds a save from the plan until approval", async () => {
     const before = readFileSync("notes.json", "utf8");
     let calls = 0;
     const reply = await askGemini(
-      [{ role: "user", content: "remember that I live in cairo" }],
+      [{ role: "user", content: "keep this, I live in cairo" }],
       async () => {
         calls += 1;
-        throw new Error("model should not run");
+        return { text: JSON.stringify([{ save: "I live in cairo" }]) };
       },
     );
 
     expect(readFileSync("notes.json", "utf8")).toBe(before);
-    expect(calls).toBe(0);
+    expect(calls).toBe(1);
     expect(reply.pending).toEqual({ title: "I live in cairo", content: "I live in cairo" });
     expect(reply.reply).toBe("Waiting for approval");
-    expect(reply.steps).toEqual(["remember: I live in cairo"]);
+    expect(reply.steps).toEqual(["plan: save I live in cairo"]);
+  });
+
+  it("does not wait when the plan returns a checklist", async () => {
+    const reply = await askGemini(
+      [{ role: "user", content: "I live in cairo" }],
+      async () => ({ text: JSON.stringify([{ item: "city" }]) }),
+      { notes: [{ title: "Where I live", content: "I live in cairo" }] },
+      async (texts) => texts.map(() => [0, 0]),
+    );
+
+    expect(reply.pending).toBeNull();
+    expect(reply.reply).toBe("I don't know");
   });
 
   it("rejects a blank message", async () => {

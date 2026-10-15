@@ -29,6 +29,7 @@ function recentChat(message) {
 
 function stepLabel(step, patch) {
   if (step === "plan") {
+    if (patch.pending?.content) return `plan: save ${patch.pending.content}`;
     const items = (patch.checklist ?? []).map((row) => row.item).filter(Boolean);
     return items.length ? `plan: ${items.join(", ")}` : "plan";
   }
@@ -43,7 +44,6 @@ function stepLabel(step, patch) {
     return verdict ? `check: ${verdict}` : "check";
   }
   if (step === "answer" && patch.trace?.some((row) => row.blocked)) return "answer: blocked";
-  if (step === "remember") return `remember: ${patch.pending?.content ?? ""}`;
   return step;
 }
 
@@ -92,7 +92,15 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
   }
 
   async function planStep() {
-    return { checklist: await plan(question, callModel) };
+    const list = await plan(question, callModel);
+    if (list?.save) {
+      return {
+        pending: { title: list.save, content: list.save },
+        reply: "Waiting for approval",
+        checklist: [],
+      };
+    }
+    return { checklist: list };
   }
 
   async function search(state) {
@@ -139,6 +147,7 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
   }
 
   function nextStep(state) {
+    if (state.pending) return END;
     const unfinished = state.checklist.find((entry) => entry.done === false);
     if (unfinished && unfinished.item !== state.previousItem) {
       return "search";
@@ -189,23 +198,13 @@ export async function askGemini(message, generateContent, store, embed, rerank, 
     };
   }
 
-  async function remember() {
-    const content = question.replace(/^remember that\s+/i, "").trim().replace(/[.!?]+$/, "");
-    return {
-      pending: { title: content, content },
-      reply: "Waiting for approval",
-    };
-  }
-
   const app = new StateGraph(GraphState)
     .addNode("plan", planStep)
     .addNode("search", search)
     .addNode("giveUp", giveUp)
     .addNode("answer", answer)
     .addNode("check", checkStep)
-    .addNode("remember", remember)
-    .addConditionalEdges(START, () => (/^remember that\s+\S/i.test(question) ? "remember" : "plan"))
-    .addEdge("remember", END)
+    .addEdge(START, "plan")
     .addConditionalEdges("plan", nextStep)
     .addConditionalEdges("search", nextStep)
     .addEdge("giveUp", END)
