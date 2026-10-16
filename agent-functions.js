@@ -108,6 +108,7 @@ export async function searchNotes(query, store = notes, embed, rerank) {
     success: true,
     message: "Found matching notes. Use every note in results. Do not answer from only the first one.",
     results: matched.map((row) => row.note),
+    ranked: scored.map((row) => row.note),
   };
 }
 export async function addNote(title, content, store = notes) {
@@ -175,17 +176,19 @@ async function pageChunkOrMiss(question, embed, rerank) {
     score: cosine(queryVector, row.vector) + bm25(question, row.note.content, texts),
   }));
   scored.sort((a, b) => b.score - a.score);
+  const ranked = scored.map((row) => row.note);
   if (!rerank) {
     const matched = matchedNotes(scored);
-    if (matched.length === 0) return miss;
+    if (matched.length === 0) return { ...miss, ranked };
     return {
       success: true,
       message: "Found matching notes. Use every note in results. Do not answer from only the first one.",
       results: matched.map((row) => row.note),
+      ranked,
     };
   }
   const top = scored.filter((row) => row.score >= MIN_SCORE).slice(0, 3);
-  if (top.length === 0) return miss;
+  if (top.length === 0) return { ...miss, ranked };
   const notesInScoreOrder = top.map((row) => row.note);
   const ordered = await rerank(question, notesInScoreOrder);
   const results = Array.isArray(ordered) && ordered.length === notesInScoreOrder.length
@@ -195,6 +198,7 @@ async function pageChunkOrMiss(question, embed, rerank) {
     success: true,
     message: "Found matching notes. Use every note in results. Do not answer from only the first one.",
     results,
+    ranked,
   };
 }
 
