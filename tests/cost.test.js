@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { priceCall, totalCost } from "../cost.js";
+import { budget, priceCall, totalCost } from "../cost.js";
 
 describe("cost", () => {
   it("counts missing usage as zero", () => {
@@ -31,5 +31,21 @@ describe("cost", () => {
     expect(cost.dollars).toBeCloseTo(0.15);
     expect(cost.aiCalls).toBe(2);
     expect(cost.stopped).toBe("cap");
+  });
+
+  it("fails for the cap and names the call when the chunk was found", () => {
+    const run = { question: "zzzzz", recall: 1 };
+    const calls = [
+      priceCall("gemini-3.5-flash-lite", { promptTokenCount: 10, candidatesTokenCount: 5 }),
+      priceCall("gemini-embedding-001", { promptTokenCount: 1_000_000 }),
+    ];
+    const failure = budget(run, calls, 100);
+
+    expect(failure).toEqual({
+      question: "zzzzz",
+      recall: 1,
+      failed: "cap",
+      model: "gemini-embedding-001",
+    });
   });
 });

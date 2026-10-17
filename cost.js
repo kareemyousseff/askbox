@@ -16,6 +16,12 @@ export function priceCall(model, usage) {
   return { model, inputTokens, outputTokens, dollars };
 }
 
+export function budget(run, calls, cap) {
+  const spent = calls.find((call) => call.inputTokens + call.outputTokens > cap);
+  if (!spent) return null;
+  return { question: run.question, recall: run.recall, failed: "cap", model: spent.model };
+}
+
 export function totalCost(aiCalls, stopped) {
   return {
     tokens: aiCalls.reduce((sum, aiCall) => sum + aiCall.inputTokens + aiCall.outputTokens, 0),
