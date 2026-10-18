@@ -79,6 +79,7 @@ function App() {
             trace: data.trace || [],
             latency: data.latency || [],
             cost: data.cost || null,
+            failure: data.failure || null,
           },
         ];
         setTurns(updatedTurns);
@@ -136,6 +137,7 @@ function App() {
               Cost: {turn.cost.tokens} tokens, ${Number(turn.cost.dollars).toFixed(6)} paid-tier estimate, {turn.cost.stopped}
             </p>
           ) : null}
+          {turn.failure ? <p>Cap: {turn.failure.failed}, {turn.failure.model}</p> : null}
           {turn.pending ? <p>Pending: {turn.pending.title}</p> : null}
           {turn.pending ? <p>Pending: {turn.pending.content}</p> : null}
           {turn.pending ? <button onClick={() => onApprove(turn.pending) } >Approve</button> : null}

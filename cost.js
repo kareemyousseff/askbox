@@ -22,6 +22,22 @@ export function budget(run, calls, cap) {
   return { question: run.question, recall: run.recall, failed: "cap", model: spent.model };
 }
 
+export function finishAsk(result, calls, cap) {
+  const failure = budget({ question: result.question }, calls, cap);
+  return {
+    reply: result.reply,
+    searches: result.searches,
+    pending: result.pending,
+    judgment: result.judgment,
+    checklist: result.checklist,
+    steps: result.steps,
+    trace: result.trace,
+    latency: result.latency,
+    cost: totalCost(calls, failure ? "cap" : "answered"),
+    failure,
+  };
+}
+
 export function totalCost(aiCalls, stopped) {
   return {
     tokens: aiCalls.reduce((sum, aiCall) => sum + aiCall.inputTokens + aiCall.outputTokens, 0),

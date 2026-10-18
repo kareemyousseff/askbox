@@ -4,7 +4,9 @@ import { askGemini } from "./ask.js";
 import { checklistSchema } from "./plan.js";
 import { addNote } from "./agent-functions.js";
 import { judge } from "./judge.js";
-import { priceCall, totalCost } from "./cost.js";
+import { finishAsk, priceCall, totalCost } from "./cost.js";
+
+const TOKEN_CAP = 100_000;
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -155,8 +157,18 @@ app.post("/ask", async (req, res) => {
       return track("gemini-3.5-flash-lite", response);
     });
     const judgment = String(judged?.text ?? "").trim();
-    const cost = totalCost(aiCalls, "answered");
-    res.json({ reply, searches, pending, judgment, checklist, steps: [...steps, "judge"], trace, latency, cost });
+    const question = [...(req.body?.message ?? [])].reverse().find((turn) => turn.role === "user")?.content ?? "";
+    res.json(finishAsk({
+      question,
+      reply,
+      searches,
+      pending,
+      judgment,
+      checklist,
+      steps: [...steps, "judge"],
+      trace,
+      latency,
+    }, aiCalls, TOKEN_CAP));
   } catch (error) {
     const stopped = error.message === "Too many calls" ? "cap" : "tool error";
     res.status(400).json({ error: error.message, cost: totalCost(aiCalls, stopped) });
