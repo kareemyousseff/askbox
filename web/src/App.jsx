@@ -11,6 +11,9 @@ function App() {
   });
   const nextTurns = [...turns, { role: "user", content: message }];
   const [pending, setPending] = useState(false);
+  const [page, setPage] = useState("Vendor: Acme\nDate: 2026-01-02\nPaper 4");
+  const [invoiceText, setInvoiceText] = useState("");
+  const [reading, setReading] = useState(false);
 
   async function onApprove(pending) {
     const response = await fetch("http://localhost:3000/approve", {
@@ -94,6 +97,25 @@ function App() {
     }
   }
 
+  async function onInvoice(event) {
+    event.preventDefault();
+    setReading(true);
+    setInvoiceText("Reading...");
+    try {
+      const response = await fetch("http://localhost:3000/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page }),
+      });
+      const data = await response.json();
+      setInvoiceText(data.error ? data.error : JSON.stringify({ invoice: data.invoice, reply: data.reply }, null, 2));
+    } catch {
+      setInvoiceText("Could not reach the server.");
+    } finally {
+      setReading(false);
+    }
+  }
+
   return (
     <>
       <h1>Ask box</h1>
@@ -111,6 +133,17 @@ function App() {
         </button>
       </form>
       <pre>{reply}</pre>
+      <form onSubmit={onInvoice}>
+        <textarea
+          value={page}
+          onChange={(event) => setPage(event.target.value)}
+          placeholder="Paste an invoice"
+        />
+        <button type="submit" disabled={reading}>
+          {reading ? "Reading..." : "Extract"}
+        </button>
+      </form>
+      <pre>{invoiceText}</pre>
       {turns.map((turn, index) => (
         <div key={index}>
           <p>

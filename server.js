@@ -1,6 +1,7 @@
 import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
+import { extractInvoice, invoiceSchema } from "./invoice.js";
 import { checklistSchema } from "./plan.js";
 import { addNote } from "./agent-functions.js";
 import { judge } from "./judge.js";
@@ -172,6 +173,31 @@ app.post("/ask", async (req, res) => {
   } catch (error) {
     const stopped = error.message === "Too many calls" ? "cap" : "tool error";
     res.status(400).json({ error: error.message, cost: totalCost(aiCalls, stopped) });
+  }
+});
+
+app.post("/invoice", async (req, res) => {
+  try {
+    const page = String(req.body?.page ?? "");
+    if (!page.trim()) {
+      res.status(400).json({ error: "Page is required" });
+      return;
+    }
+    const result = await extractInvoice(page, async (contents) => {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash-lite",
+        contents,
+        config: {
+          temperature: 0,
+          responseMimeType: "application/json",
+          responseSchema: invoiceSchema,
+        },
+      });
+      return response;
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 
