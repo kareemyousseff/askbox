@@ -48,8 +48,22 @@ function replyFor(invoice) {
 }
 
 export async function extractInvoice(page, generateContent) {
+  async function callModel(contents) {
+    let tries = 0;
+    while (tries < 2) {
+      tries += 1;
+      try {
+        return await generateContent(contents);
+      } catch (error) {
+        const status = Number(error?.status ?? error?.statusCode);
+        if (status === 500 && tries < 2) continue;
+        throw error;
+      }
+    }
+  }
+
   async function fill() {
-    const response = await generateContent([
+    const response = await callModel([
       {
         role: "user",
         parts: [{ text: "Fill the invoice from this page. Use null when a field is missing.\n" + page }],
