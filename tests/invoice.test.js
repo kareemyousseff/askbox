@@ -22,5 +22,25 @@ describe("invoice", () => {
       total: null,
     });
     expect(result.reply.includes("99")).toBe(false);
+    expect(result.failure).toBe(null);
+  });
+
+  it("fails before a retry when the line items do not add up to the total", async () => {
+    const badPage = readFileSync("invoices/bad-total.txt", "utf8");
+    let calls = 0;
+    const result = await extractInvoice(badPage, async () => {
+      calls += 1;
+      return {
+        text: JSON.stringify({
+          vendor: "Acme",
+          date: "2026-01-02",
+          lineItems: [{ name: "paper", amount: 4 }],
+          total: 99,
+        }),
+      };
+    });
+
+    expect(calls).toBe(1);
+    expect(result.failure).toBe("Line items add up to 4. Total is 10.");
   });
 });

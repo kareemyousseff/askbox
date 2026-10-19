@@ -108,7 +108,7 @@ function App() {
         body: JSON.stringify({ page }),
       });
       const data = await response.json();
-      setInvoiceText(data.error ? data.error : JSON.stringify({ invoice: data.invoice, reply: data.reply }, null, 2));
+      setInvoiceText(data.error ? data.error : JSON.stringify({ invoice: data.invoice, reply: data.reply, failure: data.failure }, null, 2));
     } catch {
       setInvoiceText("Could not reach the server.");
     } finally {

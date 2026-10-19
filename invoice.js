@@ -5,6 +5,7 @@ const InvoiceState = Annotation.Root({
   page: Annotation(),
   invoice: Annotation(),
   reply: Annotation(),
+  failure: Annotation(),
 });
 
 export const invoiceSchema = {
@@ -30,6 +31,13 @@ function totalOnPage(page) {
   const line = String(page).match(/^total\s*:\s*(\d+(?:\.\d+)?)\s*$/im);
   if (!line) return null;
   return Number(line[1]);
+}
+
+function sumFailure(invoice) {
+  if (invoice.total == null) return null;
+  const sum = invoice.lineItems.reduce((total, item) => total + Number(item.amount), 0);
+  if (sum === invoice.total) return null;
+  return `Line items add up to ${sum}. Total is ${invoice.total}.`;
 }
 
 function replyFor(invoice) {
@@ -58,16 +66,22 @@ export async function extractInvoice(page, generateContent) {
     return { invoice, reply: replyFor(invoice) };
   }
 
+  function check(state) {
+    return { failure: sumFailure(state.invoice) };
+  }
+
   const app = new StateGraph(InvoiceState)
     .addNode("fill", fill)
+    .addNode("check", check)
     .addEdge(START, "fill")
-    .addEdge("fill", END)
+    .addEdge("fill", "check")
+    .addEdge("check", END)
     .compile();
 
-  const result = { page, invoice: null, reply: "" };
-  const stream = await app.stream({ page, invoice: null, reply: "" }, { streamMode: "updates" });
+  const result = { page, invoice: null, reply: "", failure: null };
+  const stream = await app.stream({ page, invoice: null, reply: "", failure: null }, { streamMode: "updates" });
   for await (const update of stream) {
     for (const patch of Object.values(update)) Object.assign(result, patch);
   }
-  return { invoice: result.invoice, reply: result.reply };
+  return { invoice: result.invoice, reply: result.reply, failure: result.failure };
 }

@@ -1,0 +1,4 @@
+Vendor: Acme
+Date: 2026-01-02
+Paper 4
+Total: 10
