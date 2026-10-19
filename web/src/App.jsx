@@ -13,7 +13,7 @@ function App() {
   const [pending, setPending] = useState(false);
   const [page, setPage] = useState("Vendor: Acme\nDate: 2026-01-02\nPaper 4");
   const [invoiceText, setInvoiceText] = useState("");
-  const [reading, setReading] = useState(false);
+  const [invoicePending, setInvoicePending] = useState(null);
 
   async function onApprove(pending) {
     const response = await fetch("http://localhost:3000/approve", {
@@ -108,12 +108,34 @@ function App() {
         body: JSON.stringify({ page }),
       });
       const data = await response.json();
-      setInvoiceText(data.error ? data.error : JSON.stringify({ invoice: data.invoice, reply: data.reply, failure: data.failure }, null, 2));
+      setInvoicePending(data.pending || null);
+      setInvoiceText(data.error ? data.error : JSON.stringify({ invoice: data.invoice, reply: data.reply, failure: data.failure, pending: data.pending }, null, 2));
     } catch {
       setInvoiceText("Could not reach the server.");
     } finally {
       setReading(false);
     }
+  }
+
+  async function onInvoiceApprove() {
+    const response = await fetch("http://localhost:3000/invoice/approve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invoice: invoicePending }),
+    });
+    await response.json();
+    setInvoicePending(null);
+    setInvoiceText("Invoice saved");
+  }
+
+  async function onInvoiceReject() {
+    const response = await fetch("http://localhost:3000/invoice/reject", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    await response.json();
+    setInvoicePending(null);
+    setInvoiceText("Invoice rejected");
   }
 
   return (
@@ -144,6 +166,8 @@ function App() {
         </button>
       </form>
       <pre>{invoiceText}</pre>
+      {invoicePending ? <button onClick={onInvoiceApprove}>Approve invoice</button> : null}
+      {invoicePending ? <button onClick={onInvoiceReject}>Reject invoice</button> : null}
       {turns.map((turn, index) => (
         <div key={index}>
           <p>

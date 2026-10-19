@@ -1,6 +1,8 @@
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import { describe, expect, it } from "vitest";
-import { extractInvoice } from "../invoice.js";
+import { approveInvoice, extractInvoice, rejectInvoice } from "../invoice.js";
 
 const page = readFileSync("invoices/missing-total.txt", "utf8");
 
@@ -42,6 +44,14 @@ describe("invoice", () => {
 
     expect(calls).toBe(1);
     expect(result.failure).toBe("Line items add up to 4. Total is 10.");
+    expect(result.pending).toEqual(result.invoice);
+
+    const file = join(tmpdir(), `invoice-${Date.now()}.json`);
+    writeFileSync(file, "[]");
+    const before = readFileSync(file, "utf8");
+    rejectInvoice(file);
+    expect(readFileSync(file, "utf8")).toBe(before);
+    expect(approveInvoice(result.pending, file)).toEqual([result.invoice]);
   });
 
   it("retries a 500 once and keeps the invoice from the second call", async () => {

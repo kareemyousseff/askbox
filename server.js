@@ -1,7 +1,7 @@
 import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
-import { extractInvoice, invoiceSchema } from "./invoice.js";
+import { extractInvoice, invoiceSchema, approveInvoice, rejectInvoice } from "./invoice.js";
 import { checklistSchema } from "./plan.js";
 import { addNote } from "./agent-functions.js";
 import { judge } from "./judge.js";
@@ -199,6 +199,15 @@ app.post("/invoice", async (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+});
+
+app.post("/invoice/approve", (req, res) => {
+  const rows = approveInvoice(req.body?.invoice);
+  res.json({ success: true, invoices: rows });
+});
+
+app.post("/invoice/reject", (req, res) => {
+  res.json({ success: true, invoices: rejectInvoice() });
 });
 
 app.post("/approve", async (req, res) => {

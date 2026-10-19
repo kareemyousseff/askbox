@@ -1,5 +1,8 @@
 import { Type } from "@google/genai";
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
+import fs from "fs";
+
+export const invoiceFile = "invoices/saved.json";
 
 const InvoiceState = Annotation.Root({
   page: Annotation(),
@@ -97,5 +100,26 @@ export async function extractInvoice(page, generateContent) {
   for await (const update of stream) {
     for (const patch of Object.values(update)) Object.assign(result, patch);
   }
-  return { invoice: result.invoice, reply: result.reply, failure: result.failure };
+  return {
+    invoice: result.invoice,
+    reply: result.reply,
+    failure: result.failure,
+    pending: result.failure ? result.invoice : null,
+  };
+}
+
+export function readInvoices(file = invoiceFile) {
+  if (!fs.existsSync(file)) return [];
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+export function approveInvoice(invoice, file = invoiceFile) {
+  const rows = readInvoices(file);
+  rows.push(invoice);
+  fs.writeFileSync(file, JSON.stringify(rows, null, 2));
+  return rows;
+}
+
+export function rejectInvoice(file = invoiceFile) {
+  return readInvoices(file);
 }
