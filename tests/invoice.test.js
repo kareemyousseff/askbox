@@ -25,6 +25,7 @@ describe("invoice", () => {
     });
     expect(result.reply.includes("99")).toBe(false);
     expect(result.failure).toBe(null);
+    expect(result.pending).toBe(null);
   });
 
   it("fails before a retry when the line items do not add up to the total", async () => {

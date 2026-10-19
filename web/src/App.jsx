@@ -13,6 +13,8 @@ function App() {
   const [pending, setPending] = useState(false);
   const [page, setPage] = useState("Vendor: Acme\nDate: 2026-01-02\nPaper 4");
   const [invoiceText, setInvoiceText] = useState("");
+  const [invoiceResult, setInvoiceResult] = useState(null);
+  const [reading, setReading] = useState(false);
   const [invoicePending, setInvoicePending] = useState(null);
 
   async function onApprove(pending) {
@@ -100,7 +102,9 @@ function App() {
   async function onInvoice(event) {
     event.preventDefault();
     setReading(true);
-    setInvoiceText("Reading...");
+    setInvoicePending(null);
+    setInvoiceResult(null);
+    setInvoiceText("");
     try {
       const response = await fetch("http://localhost:3000/invoice", {
         method: "POST",
@@ -108,8 +112,12 @@ function App() {
         body: JSON.stringify({ page }),
       });
       const data = await response.json();
+      if (data.error) {
+        setInvoiceText(data.error);
+        return;
+      }
       setInvoicePending(data.pending || null);
-      setInvoiceText(data.error ? data.error : JSON.stringify({ invoice: data.invoice, reply: data.reply, failure: data.failure, pending: data.pending }, null, 2));
+      setInvoiceResult({ invoice: data.invoice, reply: data.reply, failure: data.failure });
     } catch {
       setInvoiceText("Could not reach the server.");
     } finally {
@@ -125,6 +133,7 @@ function App() {
     });
     await response.json();
     setInvoicePending(null);
+    setInvoiceResult(null);
     setInvoiceText("Invoice saved");
   }
 
@@ -135,6 +144,7 @@ function App() {
     });
     await response.json();
     setInvoicePending(null);
+    setInvoiceResult(null);
     setInvoiceText("Invoice rejected");
   }
 
@@ -166,6 +176,16 @@ function App() {
         </button>
       </form>
       <pre>{invoiceText}</pre>
+      {invoiceResult ? (
+        <>
+          <p>{invoiceResult.reply}</p>
+          <p>Vendor: {invoiceResult.invoice?.vendor}</p>
+          <p>Date: {invoiceResult.invoice?.date}</p>
+          <p>Items: {invoiceResult.invoice?.lineItems?.map((item) => `${item.name} ${item.amount}`).join(", ")}</p>
+          <p>Total: {invoiceResult.invoice?.total ?? "null"}</p>
+          {invoiceResult.failure ? <p>{invoiceResult.failure}</p> : null}
+        </>
+      ) : null}
       {invoicePending ? <button onClick={onInvoiceApprove}>Approve invoice</button> : null}
       {invoicePending ? <button onClick={onInvoiceReject}>Reject invoice</button> : null}
       {turns.map((turn, index) => (
