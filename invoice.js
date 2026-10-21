@@ -51,16 +51,16 @@ function replyFor(invoice) {
   return `${text}. Total ${invoice.total}`;
 }
 
-export async function extractInvoice(page, generateContent) {
+export async function extractInvoice(page, generateContent, callCap = 2) {
   async function callModel(contents) {
     let tries = 0;
-    while (tries < 2) {
+    while (tries < callCap) {
       tries += 1;
       try {
         return await generateContent(contents);
       } catch (error) {
         const status = Number(error?.status ?? error?.statusCode);
-        if (status === 500 && tries < 2) continue;
+        if (status === 500 && tries < callCap) continue;
         throw error;
       }
     }
@@ -137,4 +137,29 @@ export async function runBatch(pages, extract, file = placeFile) {
     fs.writeFileSync(file, JSON.stringify({ done: i + 1 }));
   }
   return readPlace(file);
+}
+
+function sameField(invoice, label, field) {
+  if (!invoice) return false;
+  if (field === "lineItems") return JSON.stringify(invoice.lineItems) === JSON.stringify(label.lineItems);
+  return invoice[field] === label[field];
+}
+
+export function fieldReport(before, after, right) {
+  const fields = ["vendor", "date", "lineItems", "total"];
+  return fields.flatMap((field) => {
+    const count = (rows) => right.filter((label) => {
+      const row = rows.find((item) => item.document === label.document);
+      return sameField(row?.invoice, label, field);
+    }).length;
+    const first = count(before);
+    const second = count(after);
+    if (second <= first) return [];
+    const document = right.find((label) => {
+      const earlier = before.find((item) => item.document === label.document);
+      const later = after.find((item) => item.document === label.document);
+      return !sameField(earlier?.invoice, label, field) && sameField(later?.invoice, label, field);
+    }).document;
+    return [{ field, before: first, after: second, document }];
+  });
 }

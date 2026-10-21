@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
-import { approveInvoice, extractInvoice, readPlace, rejectInvoice, runBatch } from "../invoice.js";
+import { approveInvoice, extractInvoice, fieldReport, readPlace, rejectInvoice, runBatch } from "../invoice.js";
 
 const page = readFileSync("invoices/missing-total.txt", "utf8");
 
@@ -112,5 +112,63 @@ describe("invoice", () => {
 
     expect(calls).toEqual(["Beta", "Cairo"]);
     expect(place).toEqual({ done: 3 });
+  });
+
+  it("counts the boxes the retry filled", async () => {
+    const bills = [
+      ["Acme", "2026-01-02", "Paper", 4],
+      ["Beta", "2026-01-03", "Pen", 2],
+      ["Cairo", "2026-01-04", "Book", 7],
+      ["Delta", "2026-01-05", "Tape", 3],
+      ["Echo", "2026-01-06", "Ink", 5],
+      ["Foxtrot", "2026-01-07", "Clip", 1],
+      ["Gulf", "2026-01-08", "Pad", 6],
+      ["Hotel", "2026-01-09", "Lamp", 8],
+    ].map(([vendor, date, item, amount]) => ({
+      document: vendor,
+      page: `Vendor: ${vendor}\nDate: ${date}\n${item} ${amount}\nTotal: ${amount}`,
+      vendor,
+      date,
+      lineItems: [{ name: item, amount }],
+      total: amount,
+    }));
+
+    async function run(callCap) {
+      const rows = [];
+      for (const bill of bills) {
+        let calls = 0;
+        try {
+          const result = await extractInvoice(bill.page, async () => {
+            calls += 1;
+            if (bill.document === "Beta" && calls === 1) {
+              const error = new Error("server");
+              error.status = 500;
+              throw error;
+            }
+            return {
+              text: JSON.stringify({
+                vendor: bill.vendor,
+                date: bill.date,
+                lineItems: bill.lineItems,
+                total: bill.total,
+              }),
+            };
+          }, callCap);
+          rows.push({ document: bill.document, invoice: result.invoice });
+        } catch {
+          rows.push({ document: bill.document, invoice: null });
+        }
+      }
+      return rows;
+    }
+
+    const before = await run(1);
+    const after = await run(2);
+    expect(fieldReport(before, after, bills)).toEqual([
+      { field: "vendor", before: 7, after: 8, document: "Beta" },
+      { field: "date", before: 7, after: 8, document: "Beta" },
+      { field: "lineItems", before: 7, after: 8, document: "Beta" },
+      { field: "total", before: 7, after: 8, document: "Beta" },
+    ]);
   });
 });
