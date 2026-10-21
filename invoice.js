@@ -126,15 +126,21 @@ export function rejectInvoice(file = invoiceFile) {
 }
 
 export function readPlace(file = placeFile) {
-  if (!fs.existsSync(file)) return { done: 0 };
-  return JSON.parse(fs.readFileSync(file, "utf8"));
+  if (!fs.existsSync(file)) return { done: 0, invoices: [] };
+  const place = JSON.parse(fs.readFileSync(file, "utf8"));
+  return {
+    done: place.done ?? 0,
+    invoices: Array.isArray(place.invoices) ? place.invoices : [],
+  };
 }
 
 export async function runBatch(pages, extract, file = placeFile) {
   const place = readPlace(file);
   for (let i = place.done; i < pages.length; i += 1) {
-    await extract(pages[i]);
-    fs.writeFileSync(file, JSON.stringify({ done: i + 1 }));
+    const invoice = await extract(pages[i]);
+    place.invoices.push(invoice);
+    place.done = i + 1;
+    fs.writeFileSync(file, JSON.stringify({ done: place.done, invoices: place.invoices }));
   }
   return readPlace(file);
 }

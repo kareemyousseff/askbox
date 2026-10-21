@@ -99,19 +99,24 @@ describe("invoice", () => {
     await expect(runBatch(pages, async (page) => {
       if (page === "Beta" && kill) throw new Error("killed");
       calls.push(page);
+      return { vendor: page };
     }, file)).rejects.toThrow("killed");
 
     expect(calls).toEqual(["Acme"]);
-    expect(readPlace(file)).toEqual({ done: 1 });
+    expect(readPlace(file)).toEqual({ done: 1, invoices: [{ vendor: "Acme" }] });
 
     calls.length = 0;
     kill = false;
     const place = await runBatch(pages, async (page) => {
       calls.push(page);
+      return { vendor: page };
     }, file);
 
     expect(calls).toEqual(["Beta", "Cairo"]);
-    expect(place).toEqual({ done: 3 });
+    expect(place).toEqual({
+      done: 3,
+      invoices: [{ vendor: "Acme" }, { vendor: "Beta" }, { vendor: "Cairo" }],
+    });
   });
 
   it("counts the boxes the retry filled", async () => {
