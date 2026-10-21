@@ -6,3 +6,4 @@ node_modules
 _reddit_scan.js
 _reddit_scan.py
 invoices/saved.json
+invoices/place.json

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
-import { approveInvoice, extractInvoice, rejectInvoice } from "../invoice.js";
+import { approveInvoice, extractInvoice, readPlace, rejectInvoice, runBatch } from "../invoice.js";
 
 const page = readFileSync("invoices/missing-total.txt", "utf8");
 
@@ -88,5 +88,29 @@ describe("invoice", () => {
       throw error;
     })).rejects.toThrow("bad request");
     expect(calls).toBe(1);
+  });
+
+  it("starts at the next invoice after a kill", async () => {
+    const file = join(tmpdir(), `place-${Date.now()}.json`);
+    const pages = ["Acme", "Beta", "Cairo"];
+    const calls = [];
+    let kill = true;
+
+    await expect(runBatch(pages, async (page) => {
+      if (page === "Beta" && kill) throw new Error("killed");
+      calls.push(page);
+    }, file)).rejects.toThrow("killed");
+
+    expect(calls).toEqual(["Acme"]);
+    expect(readPlace(file)).toEqual({ done: 1 });
+
+    calls.length = 0;
+    kill = false;
+    const place = await runBatch(pages, async (page) => {
+      calls.push(page);
+    }, file);
+
+    expect(calls).toEqual(["Beta", "Cairo"]);
+    expect(place).toEqual({ done: 3 });
   });
 });

@@ -3,6 +3,7 @@ import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import fs from "fs";
 
 export const invoiceFile = "invoices/saved.json";
+export const placeFile = "invoices/place.json";
 
 const InvoiceState = Annotation.Root({
   page: Annotation(),
@@ -122,4 +123,18 @@ export function approveInvoice(invoice, file = invoiceFile) {
 
 export function rejectInvoice(file = invoiceFile) {
   return readInvoices(file);
+}
+
+export function readPlace(file = placeFile) {
+  if (!fs.existsSync(file)) return { done: 0 };
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+export async function runBatch(pages, extract, file = placeFile) {
+  const place = readPlace(file);
+  for (let i = place.done; i < pages.length; i += 1) {
+    await extract(pages[i]);
+    fs.writeFileSync(file, JSON.stringify({ done: i + 1 }));
+  }
+  return readPlace(file);
 }
