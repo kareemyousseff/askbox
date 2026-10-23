@@ -38,5 +38,20 @@ export async function dryRefund(ticket, file = shopFile) {
   for await (const update of stream) {
     for (const patch of Object.values(update)) Object.assign(result, patch);
   }
-  return { refund: result.refund, order: result.order };
+  return {
+    refund: result.refund,
+    order: result.order,
+    pending: result.order ? { id: result.order.id, amount: result.refund.amount } : null,
+  };
+}
+
+export function approveRefund(id, file = shopFile) {
+  const orders = readOrders(file);
+  const next = orders.map((order) => order.id === id ? { ...order, status: "refunded" } : order);
+  fs.writeFileSync(file, JSON.stringify(next, null, 2));
+  return next;
+}
+
+export function rejectRefund(file = shopFile) {
+  return readOrders(file);
 }

@@ -2,7 +2,7 @@ import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
 import { extractInvoice, invoiceSchema, approveInvoice, rejectInvoice } from "./invoice.js";
-import { dryRefund } from "./shop.js";
+import { approveRefund, dryRefund, rejectRefund } from "./shop.js";
 import { checklistSchema } from "./plan.js";
 import { addNote } from "./agent-functions.js";
 import { judge } from "./judge.js";
@@ -219,6 +219,15 @@ app.post("/shop/refund", async (req, res) => {
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
+});
+
+app.post("/shop/refund/approve", (req, res) => {
+  const orders = approveRefund(Number(req.body?.id));
+  res.json({ success: true, orders });
+});
+
+app.post("/shop/refund/reject", (req, res) => {
+  res.json({ success: true, orders: rejectRefund() });
 });
 
 app.post("/approve", async (req, res) => {
