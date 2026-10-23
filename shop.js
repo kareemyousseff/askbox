@@ -41,13 +41,25 @@ export async function dryRefund(ticket, file = shopFile) {
   return {
     refund: result.refund,
     order: result.order,
-    pending: result.order ? { id: result.order.id, amount: result.refund.amount } : null,
+    pending: result.order ? { id: result.order.id, amount: result.refund.amount, key: `refund-${result.order.id}` } : null,
   };
 }
 
-export function approveRefund(id, file = shopFile) {
+export function approveRefund(pending, file = shopFile) {
   const orders = readOrders(file);
-  const next = orders.map((order) => order.id === id ? { ...order, status: "refunded" } : order);
+  const next = orders.map((order) => {
+    if (order.id !== pending.id) return order;
+    const trace = Array.isArray(order.trace) ? order.trace : [];
+    const seen = trace.some((row) => row.key === pending.key);
+    const before = order.amount;
+    const after = seen ? before : before - pending.amount;
+    return {
+      ...order,
+      status: seen ? order.status : "refunded",
+      amount: after,
+      trace: [...trace, { key: pending.key, before, after }],
+    };
+  });
   fs.writeFileSync(file, JSON.stringify(next, null, 2));
   return next;
 }

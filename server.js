@@ -222,7 +222,7 @@ app.post("/shop/refund", async (req, res) => {
 });
 
 app.post("/shop/refund/approve", (req, res) => {
-  const orders = approveRefund(Number(req.body?.id));
+  const orders = approveRefund(req.body?.pending);
   res.json({ success: true, orders });
 });
 

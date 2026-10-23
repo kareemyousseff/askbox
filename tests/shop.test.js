@@ -16,7 +16,7 @@ describe("shop", () => {
     expect(result.refund).toEqual({ amount: 20 });
     expect(result.order).toEqual({ id: 42, status: "paid", amount: 20 });
     expect(readFileSync(file, "utf8")).toBe(before);
-    expect(result.pending).toEqual({ id: 42, amount: 20 });
+    expect(result.pending).toEqual({ id: 42, amount: 20, key: "refund-42" });
   });
 
   it("leaves the order paid when the refund is rejected", () => {
@@ -29,10 +29,19 @@ describe("shop", () => {
     expect(readFileSync(file, "utf8")).toBe(before);
   });
 
-  it("writes the refund only after a yes", () => {
+  it("moves the amount once for the same refund key", () => {
     const file = join(tmpdir(), `shop-approve-${Date.now()}.json`);
+    const pending = { id: 42, amount: 20, key: "refund-42" };
     writeFileSync(file, JSON.stringify([{ id: 42, status: "paid", amount: 20 }], null, 2));
 
-    expect(approveRefund(42, file)).toEqual([{ id: 42, status: "refunded", amount: 20 }]);
+    const first = approveRefund(pending, file);
+    const second = approveRefund(pending, file);
+
+    expect(first[0].amount).toBe(0);
+    expect(second[0].amount).toBe(0);
+    expect(second[0].trace).toEqual([
+      { key: "refund-42", before: 20, after: 0 },
+      { key: "refund-42", before: 0, after: 0 },
+    ]);
   });
 });
