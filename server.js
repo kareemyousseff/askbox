@@ -2,7 +2,7 @@ import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
 import { extractInvoice, invoiceSchema, approveInvoice, rejectInvoice } from "./invoice.js";
-import { approveRefund, dryRefund, rejectRefund } from "./shop.js";
+import { approveRefund, dryRefund, rejectRefund, scoreRefund } from "./shop.js";
 import { checklistSchema } from "./plan.js";
 import { addNote } from "./agent-functions.js";
 import { judge } from "./judge.js";
@@ -222,7 +222,13 @@ app.post("/shop/refund", async (req, res) => {
 });
 
 app.post("/shop/refund/approve", (req, res) => {
-  const orders = approveRefund(req.body?.pending);
+  const pending = req.body?.pending;
+  const orders = approveRefund(pending);
+  const failure = scoreRefund("refunded", pending?.id);
+  if (failure) {
+    res.status(400).json({ error: failure });
+    return;
+  }
   res.json({ success: true, orders });
 });
 

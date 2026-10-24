@@ -67,3 +67,11 @@ export function approveRefund(pending, file = shopFile) {
 export function rejectRefund(file = shopFile) {
   return readOrders(file);
 }
+
+export function scoreRefund(responseText, orderId, file = shopFile) {
+  if (!String(responseText).includes("refunded")) return null;
+  const order = readOrders(file).find((item) => item.id === orderId);
+  if (!order) return `Order ${orderId} is missing.`;
+  if (order.status === "refunded") return null;
+  return `Order ${order.id} is ${order.status}.`;
+}

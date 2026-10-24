@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
-import { approveRefund, dryRefund, rejectRefund } from "../shop.js";
+import { approveRefund, dryRefund, rejectRefund, scoreRefund } from "../shop.js";
 
 describe("shop", () => {
   it("returns the refund amount and leaves the order paid", async () => {
@@ -43,5 +43,23 @@ describe("shop", () => {
       { key: "refund-42", before: 20, after: 0 },
       { key: "refund-42", before: 0, after: 0 },
     ]);
+  });
+
+  it("checks order 42 even when another order is still paid", () => {
+    const file = join(tmpdir(), `shop-score-${Date.now()}.json`);
+    const paid = [
+      { id: 7, status: "paid", amount: 5 },
+      { id: 42, status: "paid", amount: 20 },
+    ];
+    writeFileSync(file, JSON.stringify(paid, null, 2));
+
+    expect(scoreRefund("refunded", 42, file)).toBe("Order 42 is paid.");
+
+    const refunded = [
+      { id: 7, status: "paid", amount: 5 },
+      { id: 42, status: "refunded", amount: 0 },
+    ];
+    writeFileSync(file, JSON.stringify(refunded, null, 2));
+    expect(scoreRefund("refunded", 42, file)).toBe(null);
   });
 });
