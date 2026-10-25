@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
-import { approveRefund, dryRefund, rejectRefund, scoreRefund } from "../shop.js";
+import { approveRefund, dryRefund, rejectRefund, runTicket, scoreRefund } from "../shop.js";
 
 describe("shop", () => {
   it("returns the refund amount and leaves the order paid", async () => {
@@ -61,5 +61,28 @@ describe("shop", () => {
     ];
     writeFileSync(file, JSON.stringify(refunded, null, 2));
     expect(scoreRefund("refunded", 42, file)).toBe(null);
+  });
+
+  it("stops on waiting when the ticket never gets a yes", () => {
+    const file = join(tmpdir(), `shop-cap-${Date.now()}.json`);
+    const orders = [{ id: 42, status: "paid", amount: 20 }];
+    writeFileSync(file, JSON.stringify(orders, null, 2));
+    const before = readFileSync(file, "utf8");
+
+    const stuck = runTicket(null, file, 3);
+
+    expect(stuck.failure).toBe("waiting");
+    expect(stuck.passes).toBe(3);
+    expect(stuck.checklist).toEqual([
+      { step: "preview", done: true },
+      { step: "waiting", done: false },
+      { step: "written", done: false },
+    ]);
+    expect(readFileSync(file, "utf8")).toBe(before);
+
+    const finished = runTicket({ id: 42, amount: 20, key: "refund-42" }, file, 3);
+    expect(finished.failure).toBe(null);
+    expect(finished.checklist.every((item) => item.done)).toBe(true);
+    expect(finished.passes).toBe(1);
   });
 });

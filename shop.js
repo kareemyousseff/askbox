@@ -75,3 +75,21 @@ export function scoreRefund(responseText, orderId, file = shopFile) {
   if (order.status === "refunded") return null;
   return `Order ${order.id} is ${order.status}.`;
 }
+
+export function runTicket(pending, file = shopFile, cap = 3) {
+  const checklist = [
+    { step: "preview", done: true },
+    { step: "waiting", done: false },
+    { step: "written", done: false },
+  ];
+  let passes = 0;
+  while (checklist.some((item) => !item.done) && passes < cap) {
+    passes += 1;
+    if (!pending) continue;
+    checklist[1].done = true;
+    approveRefund(pending, file);
+    checklist[2].done = true;
+  }
+  const open = checklist.find((item) => !item.done);
+  return { checklist, failure: open ? open.step : null, passes };
+}
