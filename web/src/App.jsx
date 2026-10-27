@@ -16,6 +16,9 @@ function App() {
   const [invoiceResult, setInvoiceResult] = useState(null);
   const [reading, setReading] = useState(false);
   const [invoicePending, setInvoicePending] = useState(null);
+  const [ticket, setTicket] = useState("refund order 42, it arrived broken.");
+  const [ticketResult, setTicketResult] = useState(null);
+  const [ticketText, setTicketText] = useState("");
 
   async function onApprove(pending) {
     const response = await fetch("http://localhost:3000/approve", {
@@ -137,6 +140,26 @@ function App() {
     setInvoiceText("Invoice saved");
   }
 
+  async function onTicket(yes) {
+    setTicketText("");
+    setTicketResult(null);
+    try {
+      const response = await fetch("http://localhost:3000/shop/ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticket, yes }),
+      });
+      const data = await response.json();
+      if (data.error) {
+        setTicketText(data.error);
+        return;
+      }
+      setTicketResult(data);
+    } catch {
+      setTicketText("Could not reach the server.");
+    }
+  }
+
   async function onInvoiceReject() {
     const response = await fetch("http://localhost:3000/invoice/reject", {
       method: "POST",
@@ -188,6 +211,26 @@ function App() {
       ) : null}
       {invoicePending ? <button onClick={onInvoiceApprove}>Approve invoice</button> : null}
       {invoicePending ? <button onClick={onInvoiceReject}>Reject invoice</button> : null}
+      <form onSubmit={(event) => event.preventDefault()}>
+        <textarea
+          value={ticket}
+          onChange={(event) => setTicket(event.target.value)}
+          placeholder="Refund ticket"
+        />
+        <button type="button" onClick={() => onTicket(false)}>No yes</button>
+        <button type="button" onClick={() => onTicket(true)}>Yes</button>
+      </form>
+      <pre>{ticketText}</pre>
+      {ticketResult ? (
+        <>
+          <p>Failure: {ticketResult.failure ?? "none"}</p>
+          <p>Passes: {ticketResult.passes}</p>
+          <p>
+            {ticketResult.checklist.map((item) => `${item.step} ${item.done ? "done" : "open"}`).join(", ")}
+          </p>
+          <p>Order 42: {ticketResult.orders?.find((order) => order.id === 42)?.status}</p>
+        </>
+      ) : null}
       {turns.map((turn, index) => (
         <div key={index}>
           <p>

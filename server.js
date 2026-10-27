@@ -2,7 +2,7 @@ import express from "express";
 import { GoogleGenAI } from "@google/genai";
 import { askGemini } from "./ask.js";
 import { extractInvoice, invoiceSchema, approveInvoice, rejectInvoice } from "./invoice.js";
-import { approveRefund, dryRefund, rejectRefund, scoreRefund } from "./shop.js";
+import { approveRefund, dryRefund, readOrders, rejectRefund, runTicket, scoreRefund } from "./shop.js";
 import { checklistSchema } from "./plan.js";
 import { addNote } from "./agent-functions.js";
 import { judge } from "./judge.js";
@@ -234,6 +234,24 @@ app.post("/shop/refund/approve", (req, res) => {
 
 app.post("/shop/refund/reject", (req, res) => {
   res.json({ success: true, orders: rejectRefund() });
+});
+
+app.post("/shop/ticket", async (req, res) => {
+  try {
+    const yes = Boolean(req.body?.yes);
+    if (!yes) {
+      res.json({ ...runTicket(null), orders: readOrders() });
+      return;
+    }
+    const preview = await dryRefund(String(req.body?.ticket ?? ""));
+    if (!preview.pending) {
+      res.status(400).json({ error: "Order is missing." });
+      return;
+    }
+    res.json({ ...runTicket(preview.pending), orders: readOrders() });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 app.post("/approve", async (req, res) => {
