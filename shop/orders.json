@@ -3,5 +3,10 @@
     "id": 42,
     "status": "paid",
     "amount": 20
+  },
+  {
+    "id": 43,
+    "status": "refunded",
+    "amount": 10
   }
 ]
