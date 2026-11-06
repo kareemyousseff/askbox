@@ -5,5 +5,5 @@ node_modules
 .cursor
 _reddit_scan.js
 _reddit_scan.py
-invoices/saved.json
-invoices/place.json
+invoice/saved.json
+invoice/place.json

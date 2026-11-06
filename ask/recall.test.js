@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { searchNotes } from "../agent-functions.js";
-import { compareRuns, recall } from "../recall.js";
+import { searchNotes } from "./agent-functions.js";
+import { compareRuns, recall } from "./recall.js";
 
 const label = "lantern";
 

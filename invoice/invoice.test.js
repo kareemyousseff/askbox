@@ -2,9 +2,9 @@ import { readFileSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
-import { approveInvoice, extractInvoice, fieldReport, readPlace, rejectInvoice, runBatch } from "../invoice.js";
+import { approveInvoice, extractInvoice, fieldReport, readPlace, rejectInvoice, runBatch } from "./invoice.js";
 
-const page = readFileSync("invoices/missing-total.txt", "utf8");
+const page = readFileSync("invoice/missing-total.txt", "utf8");
 
 describe("invoice", () => {
   it("leaves the total null when the page has no total", async () => {
@@ -29,7 +29,7 @@ describe("invoice", () => {
   });
 
   it("fails before a retry when the line items do not add up to the total", async () => {
-    const badPage = readFileSync("invoices/bad-total.txt", "utf8");
+    const badPage = readFileSync("invoice/bad-total.txt", "utf8");
     let calls = 0;
     const result = await extractInvoice(badPage, async () => {
       calls += 1;

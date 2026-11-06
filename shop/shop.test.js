@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
-import { approveRefund, dryRefund, rejectRefund, runTicket, scoreRefund } from "../shop.js";
+import { approveRefund, dryRefund, rejectRefund, runTicket, scoreRefund } from "./shop.js";
 
 describe("shop", () => {
   it("returns the refund amount and leaves the order paid", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budget, finishAsk, priceCall, totalCost } from "../cost.js";
+import { budget, finishAsk, priceCall, totalCost } from "./cost.js";
 
 describe("cost", () => {
   it("counts missing usage as zero", () => {

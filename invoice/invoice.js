@@ -2,8 +2,8 @@ import { Type } from "@google/genai";
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import fs from "fs";
 
-export const invoiceFile = "invoices/saved.json";
-export const placeFile = "invoices/place.json";
+export const invoiceFile = "invoice/saved.json";
+export const placeFile = "invoice/place.json";
 
 const InvoiceState = Annotation.Root({
   page: Annotation(),

@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
-import { answerFromDocs, chunkText, cite, searchDocs, searchNotes, searchPage } from "../agent-functions.js";
+import { answerFromDocs, chunkText, cite, searchDocs, searchNotes, searchPage } from "./agent-functions.js";
 
 function fakeEmbed(texts, taskType) {
   return texts.map((text) => {
@@ -13,8 +13,8 @@ function fakeEmbed(texts, taskType) {
 describe("searchDocs", () => {
   it("returns file B when file A has the higher vector score", async () => {
     const files = [
-      { name: "a.txt", text: readFileSync("docs/a.txt", "utf8") },
-      { name: "b.txt", text: readFileSync("docs/b.txt", "utf8") },
+      { name: "a.txt", text: readFileSync("ask/docs/a.txt", "utf8") },
+      { name: "b.txt", text: readFileSync("ask/docs/b.txt", "utf8") },
     ];
     const best = await searchDocs("how old is kareem?", files, fakeEmbed);
     expect(best.name).toBe("b.txt");
@@ -22,8 +22,8 @@ describe("searchDocs", () => {
 
   it("returns null when no file contains a query word", async () => {
     const files = [
-      { name: "a.txt", text: readFileSync("docs/a.txt", "utf8") },
-      { name: "b.txt", text: readFileSync("docs/b.txt", "utf8") },
+      { name: "a.txt", text: readFileSync("ask/docs/a.txt", "utf8") },
+      { name: "b.txt", text: readFileSync("ask/docs/b.txt", "utf8") },
     ];
     const best = await searchDocs("capital of france", files, fakeEmbed);
     expect(best).toBe(null);
@@ -31,8 +31,8 @@ describe("searchDocs", () => {
 
   it("sends only file B to the model", async () => {
     const files = [
-      { name: "a.txt", text: readFileSync("docs/a.txt", "utf8") },
-      { name: "b.txt", text: readFileSync("docs/b.txt", "utf8") },
+      { name: "a.txt", text: readFileSync("ask/docs/a.txt", "utf8") },
+      { name: "b.txt", text: readFileSync("ask/docs/b.txt", "utf8") },
     ];
     const reply = await answerFromDocs("how old is kareem?", files, fakeEmbed, async (contents) => {
       const text = contents[0].parts[0].text;
@@ -45,8 +45,8 @@ describe("searchDocs", () => {
 
   it("returns I don't know without calling the model", async () => {
     const files = [
-      { name: "a.txt", text: readFileSync("docs/a.txt", "utf8") },
-      { name: "b.txt", text: readFileSync("docs/b.txt", "utf8") },
+      { name: "a.txt", text: readFileSync("ask/docs/a.txt", "utf8") },
+      { name: "b.txt", text: readFileSync("ask/docs/b.txt", "utf8") },
     ];
     const reply = await answerFromDocs("capital of france", files, fakeEmbed, async () => {
       throw new Error("generateContent should not run");
@@ -55,7 +55,7 @@ describe("searchDocs", () => {
   });
 
   it("returns the chunk that keeps the capital sentence", async () => {
-    const page = readFileSync("page.txt", "utf8");
+    const page = readFileSync("ask/page.txt", "utf8");
     const split = chunkText(page, 127, 0);
     const kept = chunkText(page, 127, 20);
     expect(split.some((piece) => piece.includes("The capital is Cairo and he is 18."))).toBe(false);
@@ -73,7 +73,7 @@ describe("searchDocs", () => {
   });
 
   it("searchNotes returns a page chunk when the notes miss", async () => {
-    const page = readFileSync("page.txt", "utf8");
+    const page = readFileSync("ask/page.txt", "utf8");
     const store = { notes: [{ title: "Where I live", content: "I live in cairo" }] };
     const hit = await searchNotes("capital", store, async (texts, taskType) => {
       if (taskType === "RETRIEVAL_QUERY") return [[1, 0]];

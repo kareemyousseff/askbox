@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import notes from "../notes.json" with { type: "json" };
-import { askGemini } from "../ask.js";
-import { searchNotes } from "../agent-functions.js";
+import notes from "./notes.json" with { type: "json" };
+import { askGemini } from "./ask.js";
+import { searchNotes } from "./agent-functions.js";
 
 function copyNotes() {
   return { notes: structuredClone(notes.notes) };
@@ -37,7 +37,7 @@ describe("askGemini", () => {
   });
 
   it("holds a save from the plan until approval", async () => {
-    const before = readFileSync("notes.json", "utf8");
+    const before = readFileSync("ask/notes.json", "utf8");
     let calls = 0;
     const reply = await askGemini(
       [{ role: "user", content: "keep this, I live in cairo" }],
@@ -47,7 +47,7 @@ describe("askGemini", () => {
       },
     );
 
-    expect(readFileSync("notes.json", "utf8")).toBe(before);
+    expect(readFileSync("ask/notes.json", "utf8")).toBe(before);
     expect(calls).toBe(1);
     expect(reply.pending).toEqual({ title: "I live in cairo", content: "I live in cairo" });
     expect(reply.reply).toBe("Waiting for approval");

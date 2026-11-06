@@ -118,7 +118,7 @@ export async function addNote(title, content, store = notes) {
   const newNote = { title, content };
   store.notes.push(newNote);
   if (store === notes) {
-    fs.writeFileSync("notes.json", JSON.stringify(notes, null, 2));
+    fs.writeFileSync("ask/notes.json", JSON.stringify(notes, null, 2));
   }
   return { success: true, message: "Note added successfully" };
 }
@@ -147,7 +147,7 @@ async function rowsForPage(embed) {
   if (saved) return saved;
   const rows = [];
   for (const page of pages) {
-    const chunks = chunkText(fs.readFileSync(page.source, "utf8"));
+    const chunks = chunkText(fs.readFileSync(`ask/${page.source}`, "utf8"));
     const vectors = await embed(chunks, "RETRIEVAL_DOCUMENT");
     chunks.forEach((content, index) => {
       rows.push({
