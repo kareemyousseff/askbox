@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { plan, readChecklist } from "./plan.js";
+import { plan, readChecklist } from "../plan.js";
 
 describe("plan", () => {
   it("asks the model for the items and starts each one undone", async () => {

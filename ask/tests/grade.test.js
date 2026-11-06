@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import notes from "./notes.json" with { type: "json" };
-import { askGemini } from "./ask.js";
-import { grade } from "./grade.js";
+import notes from "../notes.json" with { type: "json" };
+import { askGemini } from "../ask.js";
+import { grade } from "../grade.js";
 
 const task = {
   question: "how old is kareem?",

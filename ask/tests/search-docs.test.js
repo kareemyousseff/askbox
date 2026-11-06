@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
-import { answerFromDocs, chunkText, cite, searchDocs, searchNotes, searchPage } from "./agent-functions.js";
+import { answerFromDocs, chunkText, cite, searchDocs, searchNotes, searchPage } from "../agent-functions.js";
 
 function fakeEmbed(texts, taskType) {
   return texts.map((text) => {

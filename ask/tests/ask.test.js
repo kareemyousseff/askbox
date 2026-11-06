@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import notes from "./notes.json" with { type: "json" };
-import { askGemini } from "./ask.js";
-import { searchNotes } from "./agent-functions.js";
+import notes from "../notes.json" with { type: "json" };
+import { askGemini } from "../ask.js";
+import { searchNotes } from "../agent-functions.js";
 
 function copyNotes() {
   return { notes: structuredClone(notes.notes) };

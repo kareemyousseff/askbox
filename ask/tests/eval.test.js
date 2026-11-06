@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { askGemini } from "./ask.js";
+import { askGemini } from "../ask.js";
 
 function textOf(contents) {
   return contents.map((turn) => turn.parts.map((part) => part.text).join(" ")).join("\n");

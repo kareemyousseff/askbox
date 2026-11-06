@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { grade } from "./grade.js";
-import { judge } from "./judge.js";
+import { grade } from "../grade.js";
+import { judge } from "../judge.js";
 
 const reply = "He is eighteen";
 
