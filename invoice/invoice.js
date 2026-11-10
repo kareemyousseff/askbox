@@ -10,6 +10,8 @@ const InvoiceState = Annotation.Root({
   invoice: Annotation(),
   reply: Annotation(),
   failure: Annotation(),
+  trace: Annotation(),
+  tries: Annotation(),
 });
 
 export const invoiceSchema = {
@@ -66,11 +68,13 @@ export async function extractInvoice(page, generateContent, callCap = 2) {
     }
   }
 
-  async function fill() {
+  async function fill(state) {
+    const lead = "Fill the invoice from this page. Use null when a field is missing.\n";
+    const text = state.failure ? lead + state.failure + "\n" + page : lead + page;
     const response = await callModel([
       {
         role: "user",
-        parts: [{ text: "Fill the invoice from this page. Use null when a field is missing.\n" + page }],
+        parts: [{ text }],
       },
     ]);
     const cleaned = String(response?.text ?? "").trim().replace(/^```json\s*|\s*```$/g, "");
@@ -81,11 +85,19 @@ export async function extractInvoice(page, generateContent, callCap = 2) {
       lineItems: Array.isArray(parsed.lineItems) ? parsed.lineItems : [],
       total: totalOnPage(page),
     };
-    return { invoice, reply: replyFor(invoice) };
+    return { invoice, reply: replyFor(invoice), tries: (state.tries ?? 0) + 1 };
   }
 
   function check(state) {
-    return { failure: sumFailure(state.invoice) };
+    const failure = sumFailure(state.invoice);
+    const trace = state.trace ?? [];
+    if (failure && trace.length === 0) return { failure, trace: [failure] };
+    return { failure, trace };
+  }
+
+  function next(state) {
+    if (state.failure && state.tries < 2) return "fill";
+    return END;
   }
 
   const app = new StateGraph(InvoiceState)
@@ -93,11 +105,12 @@ export async function extractInvoice(page, generateContent, callCap = 2) {
     .addNode("check", check)
     .addEdge(START, "fill")
     .addEdge("fill", "check")
-    .addEdge("check", END)
+    .addConditionalEdges("check", next)
     .compile();
 
-  const result = { page, invoice: null, reply: "", failure: null };
-  const stream = await app.stream({ page, invoice: null, reply: "", failure: null }, { streamMode: "updates" });
+  const start = { page, invoice: null, reply: "", failure: null, trace: [], tries: 0 };
+  const result = { ...start };
+  const stream = await app.stream(start, { streamMode: "updates" });
   for await (const update of stream) {
     for (const patch of Object.values(update)) Object.assign(result, patch);
   }
@@ -105,6 +118,7 @@ export async function extractInvoice(page, generateContent, callCap = 2) {
     invoice: result.invoice,
     reply: result.reply,
     failure: result.failure,
+    trace: result.trace,
     pending: result.failure ? result.invoice : null,
   };
 }

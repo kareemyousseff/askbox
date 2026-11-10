@@ -28,11 +28,13 @@ describe("invoice", () => {
     expect(result.pending).toBe(null);
   });
 
-  it("fails before a retry when the line items do not add up to the total", async () => {
+  it("sends the failure back once and stops after the second try", async () => {
     const badPage = readFileSync("invoice/bad-total.txt", "utf8");
+    const prompts = [];
     let calls = 0;
-    const result = await extractInvoice(badPage, async () => {
+    const result = await extractInvoice(badPage, async (contents) => {
       calls += 1;
+      prompts.push(contents[0].parts[0].text);
       return {
         text: JSON.stringify({
           vendor: "Acme",
@@ -43,7 +45,9 @@ describe("invoice", () => {
       };
     });
 
-    expect(calls).toBe(1);
+    expect(calls).toBe(2);
+    expect(prompts[1]).toContain("Line items add up to 4. Total is 10.");
+    expect(result.trace).toEqual(["Line items add up to 4. Total is 10."]);
     expect(result.failure).toBe("Line items add up to 4. Total is 10.");
     expect(result.pending).toEqual(result.invoice);
 
