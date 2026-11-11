@@ -53,7 +53,7 @@ function replyFor(invoice) {
   return `${text}. Total ${invoice.total}`;
 }
 
-export async function extractInvoice(page, generateContent, callCap = 2) {
+export async function extractInvoice(page, generateContent, callCap = 2, fillCap = 2) {
   async function callModel(contents) {
     let tries = 0;
     while (tries < callCap) {
@@ -96,7 +96,7 @@ export async function extractInvoice(page, generateContent, callCap = 2) {
   }
 
   function next(state) {
-    if (state.failure && state.tries < 2) return "fill";
+    if (state.failure && state.tries < fillCap) return "fill";
     return END;
   }
 

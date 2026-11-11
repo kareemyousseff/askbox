@@ -180,4 +180,51 @@ describe("invoice", () => {
       { field: "total", before: 7, after: 8, document: "Beta" },
     ]);
   });
+
+  it("counts the line item the second fill fixed", async () => {
+    const bills = [
+      ["Acme", "2026-01-02", "Paper", 4],
+      ["Beta", "2026-01-03", "Pen", 2],
+      ["Cairo", "2026-01-04", "Book", 7],
+      ["Delta", "2026-01-05", "Tape", 3],
+      ["Echo", "2026-01-06", "Ink", 5],
+      ["Foxtrot", "2026-01-07", "Clip", 1],
+      ["Gulf", "2026-01-08", "Pad", 6],
+      ["Hotel", "2026-01-09", "Lamp", 8],
+    ].map(([vendor, date, item, amount]) => ({
+      document: vendor,
+      page: `Vendor: ${vendor}\nDate: ${date}\n${item} ${amount}\nTotal: ${amount}`,
+      vendor,
+      date,
+      lineItems: [{ name: item, amount }],
+      total: amount,
+    }));
+
+    async function run(fillCap) {
+      const rows = [];
+      for (const bill of bills) {
+        let calls = 0;
+        const result = await extractInvoice(bill.page, async () => {
+          calls += 1;
+          const amount = bill.document === "Beta" && calls === 1 ? 99 : bill.lineItems[0].amount;
+          return {
+            text: JSON.stringify({
+              vendor: bill.vendor,
+              date: bill.date,
+              lineItems: [{ name: bill.lineItems[0].name, amount }],
+              total: bill.total,
+            }),
+          };
+        }, 2, fillCap);
+        rows.push({ document: bill.document, invoice: result.invoice });
+      }
+      return rows;
+    }
+
+    const before = await run(1);
+    const after = await run(2);
+    expect(fieldReport(before, after, bills)).toEqual([
+      { field: "lineItems", before: 7, after: 8, document: "Beta" },
+    ]);
+  });
 });
