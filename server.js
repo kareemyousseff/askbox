@@ -238,8 +238,8 @@ app.post("/shop/refund/reject", (req, res) => {
 
 app.post("/shop/ticket", async (req, res) => {
   try {
-    const yes = Boolean(req.body?.yes);
-    if (!yes) {
+    const approved = Boolean(req.body?.approved);
+    if (!approved) {
       res.json({ ...runTicket(null), orders: readOrders() });
       return;
     }
