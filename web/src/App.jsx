@@ -217,7 +217,7 @@ function App() {
           onChange={(event) => setTicket(event.target.value)}
           placeholder="Refund ticket"
         />
-        <button type="button" onClick={() => onTicket(false)}>No yes</button>
+        <button type="button" onClick={() => onTicket(false)}>No</button>
         <button type="button" onClick={() => onTicket(true)}>Yes</button>
       </form>
       <pre>{ticketText}</pre>
