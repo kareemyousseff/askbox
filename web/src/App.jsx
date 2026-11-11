@@ -147,7 +147,7 @@ function App() {
       const response = await fetch("http://localhost:3000/shop/ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticket, yes: approved }),
+        body: JSON.stringify({ ticket, approved }),
       });
       const data = await response.json();
       if (data.error) {
