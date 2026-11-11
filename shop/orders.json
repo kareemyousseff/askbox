@@ -25,5 +25,17 @@
     "id": 43,
     "status": "refunded",
     "amount": 10
+  },
+  {
+    "id": 44,
+    "status": "refunded",
+    "amount": 0,
+    "trace": [
+      {
+        "key": "refund-44",
+        "before": 10,
+        "after": 0
+      }
+    ]
   }
 ]

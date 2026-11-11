@@ -140,14 +140,14 @@ function App() {
     setInvoiceText("Invoice saved");
   }
 
-  async function onTicket(yes) {
+  async function onTicket(approved) {
     setTicketText("");
     setTicketResult(null);
     try {
       const response = await fetch("http://localhost:3000/shop/ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticket, yes }),
+        body: JSON.stringify({ ticket, yes: approved }),
       });
       const data = await response.json();
       if (data.error) {
